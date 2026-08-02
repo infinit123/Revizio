@@ -271,6 +271,43 @@
     box-shadow: 0 2px 8px var(--accent-glow);
   }
 
+  /* Leaderboard Styling */
+  .leader-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(120, 120, 128, 0.08);
+    margin-bottom: 8px;
+    transition: background 0.2s ease;
+  }
+  .leader-item:last-child { margin-bottom: 0; }
+  .leader-item.rank-1 {
+    background: rgba(255, 215, 0, 0.15);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+  }
+  .leader-item.is-me {
+    border: 1px solid var(--accent);
+  }
+  .rank-badge {
+    font-size: 13px;
+    font-weight: 800;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    color: var(--ink);
+  }
+  .rank-1 .rank-badge {
+    background: #ffd700;
+    color: #000;
+  }
+
   /* iOS Pin Pad Bottom Container */
   .pin-container {
     margin-top: auto;
@@ -414,6 +451,24 @@ function transitionView(callback) {
 
 function todayKey(d = new Date()) { return d.toISOString().slice(0, 10); }
 function monthKey(d = new Date()) { return d.toISOString().slice(0, 7); }
+
+// Calculare interval săptămână curentă (Luni - Duminică)
+function getCurrentWeekDays() {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 is Sunday
+  const distanceToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
+  
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + distanceToMonday);
+  
+  const weekDays = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    weekDays.push(d.toISOString().slice(0, 10));
+  }
+  return weekDays;
+}
 
 function fmtRON(n) {
   return new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' lei';
@@ -599,6 +654,57 @@ function renderKeypad() {
   `;
 }
 
+// Calcul top 5 săptămânal
+function renderLeaderboard() {
+  const weekDays = getCurrentWeekDays();
+  const rankings = [];
+
+  Object.keys(db.users).forEach(userName => {
+    const u = db.users[userName];
+    let totalWeekNet = 0;
+    if (u.days) {
+      weekDays.forEach(day => {
+        if (u.days[day]) {
+          totalWeekNet += u.days[day].reduce((a, b) => a + b, 0);
+        }
+      });
+    }
+    rankings.push({ name: userName, total: totalWeekNet });
+  });
+
+  // Sortare descrescătoare după suma făcută
+  rankings.sort((a, b) => b.total - a.total);
+  const top5 = rankings.slice(0, 5);
+
+  return `
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span style="font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px;">🏆 Top 5 Săptămânal</span>
+        <span style="font-size: 11px; color: var(--ink-faint);">Actualizat live</span>
+      </div>
+      <div>
+        ${top5.map((item, index) => {
+          const isRank1 = index === 0;
+          const isMe = item.name === activeUser;
+          return `
+            <div class="leader-item ${isRank1 ? 'rank-1' : ''} ${isMe ? 'is-me' : ''}">
+              <div style="display: flex; align-items: center;">
+                <div class="rank-badge">${isRank1 ? '👑' : index + 1}</div>
+                <div style="font-size: 14px; font-weight: ${isMe ? '700' : '500'}; color: var(--ink);">
+                  ${item.name} ${isMe ? '<span style="font-size: 11px; color: var(--accent);">(Tu)</span>' : ''}
+                </div>
+              </div>
+              <div style="font-size: 14px; font-weight: 700; color: ${isRank1 ? '#ffd700' : 'var(--ink)'}">
+                ${fmtRON(item.total)}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
 function render() {
   const root = document.getElementById('root');
   const userCount = Object.keys(db.users).length;
@@ -749,6 +855,8 @@ function render() {
         Anulează ultima adăugare (${grossOf(todayEntries[todayEntries.length - 1])} lei)
       </button>
     ` : ''}
+
+    ${renderLeaderboard()}
 
     <div class="card">
       <div style="font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Luna Curentă (${mKey})</div>
