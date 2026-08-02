@@ -1,32 +1,19 @@
+ // ==========================================
+// CONEXIUNE SUPABASE CLOUD
+// ==========================================
+const SUPABASE_URL = 'https://edvtwbhccnbxdoavgqak.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_qC9HEPkNLcd8JqbRyv0msg_IOGlDs8L';
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const VAT_RATE = 0.21;
 const GROSS_RATES = [190, 290, 310];
 const RATES = GROSS_RATES.map(r => Math.round((r / (1 + VAT_RATE)) * 100) / 100);
 const DAILY_TARGET = 1500;
 const BONUS_RATE = 0.31;
-const DB_KEY = 'revizio_v2_db';
 const THEME_KEY = 'revizio_theme';
 
-let memoryStorage = {};
-
-function loadDB() {
-  try {
-    const raw = localStorage.getItem(DB_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    if (memoryStorage[DB_KEY]) return memoryStorage[DB_KEY];
-  }
-  return { users: {} };
-}
-
-function saveDB() {
-  try { 
-    localStorage.setItem(DB_KEY, JSON.stringify(db)); 
-  } catch (e) {
-    memoryStorage[DB_KEY] = db;
-  }
-}
-
-let db = loadDB();
+let db = { users: {} };
 let activeUser = null;
 let pinInput = "";
 let isCreatingProfile = false;
@@ -36,6 +23,52 @@ let justAddedRate = null;
 let currentTheme = localStorage.getItem(THEME_KEY) || 'dark';
 
 document.body.setAttribute('data-theme', currentTheme);
+
+// Încărcare inițială din Supabase
+async function loadDB() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('revizio_data')
+      .select('payload')
+      .eq('id', 1)
+      .single();
+
+    if (data && data.payload) {
+      db = data.payload;
+    } else {
+      // Dacă tabelul e gol, inserăm structura de bază
+      await supabaseClient.from('revizio_data').upsert({ id: 1, payload: { users: {} } });
+    }
+  } catch (e) {
+    console.error("Erore la citirea din Supabase:", e);
+  }
+  render();
+}
+
+async function saveDB() {
+  try {
+    const { error } = await supabaseClient
+      .from('revizio_data')
+      .upsert({ id: 1, payload: db });
+
+    if (error) console.error("Erore la salvarea în Supabase:", error);
+  } catch (e) {
+    console.error("Erore rețea:", e);
+  }
+}
+
+// Sincronizare în timp real între telefoane (Realtime)
+function setupRealtimeSync() {
+  supabaseClient
+    .channel('public:revizio_data')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'revizio_data' }, payload => {
+      if (payload.new && payload.new.payload) {
+        db = payload.new.payload;
+        render(); // Reîmprospătează ecranul automat când un coleg modifică ceva
+      }
+    })
+    .subscribe();
+}
 
 function setTheme(theme) {
   triggerHaptic();
@@ -313,8 +346,8 @@ function renderLeaderboard() {
   return `
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <span style="font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px;">🏆 Top 5 Săptămânal</span>
-        <span style="font-size: 11px; color: var(--ink-faint);">Actualizat live</span>
+        <span style="font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px;">🏆 Top 5 Săptămânal (Cloud)</span>
+        <span style="font-size: 11px; color: var(--ink-faint);">Live Sync</span>
       </div>
       <div>
         ${top5.map((item, index) => {
@@ -398,7 +431,7 @@ function render() {
     return;
   }
 
-  const uData = db.users[activeUser];
+  const uData = db.users[activeUser] || { days: {}, shifts: {} };
   const tKey = todayKey();
   const mKey = monthKey();
 
@@ -506,4 +539,6 @@ function render() {
   `;
 }
 
-render();
+// Pornirea aplicației și activarea ascultării live
+loadDB();
+setupRealtimeSync();
