@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Revizio 2.0</title>
+<title>Revizio</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Revizio">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23378add'><rect width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' font-weight='bold' fill='white' text-anchor='middle'>R</text></svg>">
+
 <style>
   :root {
     --accent: #378add;
@@ -32,9 +34,18 @@
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
+    height: 100%;
   }
 
-  #root { min-height: 100vh; padding: 16px 16px 60px; max-width: 480px; margin: 0 auto; }
+  #root { 
+    min-height: 100vh; 
+    padding: 16px 16px 40px; 
+    max-width: 480px; 
+    margin: 0 auto; 
+    display: flex;
+    flex-direction: column;
+  }
+
   button, input, select { font-family: inherit; outline: none; }
   
   .card { background: var(--surface); border-radius: 18px; padding: 18px; border: 1px solid var(--border); margin-bottom: 14px; box-shadow: var(--shadow); }
@@ -58,13 +69,41 @@
   
   .input-field { background: #1a1d21; border: 1px solid var(--border); border-radius: 12px; padding: 12px; color: #fff; font-size: 16px; width: 100%; margin-bottom: 12px; text-align: center; }
   
-  .pin-dots { display: flex; justify-content: center; gap: 12px; margin: 20px 0; }
-  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: transparent; }
-  .pin-dot.active { background: var(--accent); border-color: var(--accent); }
+  /* iOS Style Bottom Lock Screen Pin Pad */
+  .pin-container {
+    margin-top: auto;
+    padding-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
 
-  .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 280px; margin: 0 auto; }
-  .keypad-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 50%; width: 64px; height: 64px; font-size: 22px; font-weight: 700; color: #fff; margin: 0 auto; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .keypad-btn:active { background: var(--border); }
+  .pin-dots { display: flex; justify-content: center; gap: 16px; margin-bottom: 28px; }
+  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #555; background: transparent; transition: all 0.15s ease; }
+  .pin-dot.active { background: #fff; border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+
+  .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px 24px; max-width: 320px; width: 100%; margin: 0 auto; }
+  .keypad-btn { 
+    background: rgba(255, 255, 255, 0.12); 
+    border: none; 
+    border-radius: 50%; 
+    width: 72px; 
+    height: 72px; 
+    font-size: 28px; 
+    font-weight: 400; 
+    color: #fff; 
+    margin: 0 auto; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer; 
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .keypad-btn:active { background: rgba(255, 255, 255, 0.35); transform: scale(0.92); }
+  .keypad-btn.action-btn { background: transparent; font-size: 14px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -78,6 +117,26 @@ const DAILY_TARGET = 1500;
 const BONUS_RATE = 0.31;
 const DB_KEY = 'revizio_v2_db';
 
+let memoryStorage = {};
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    if (memoryStorage[DB_KEY]) return memoryStorage[DB_KEY];
+  }
+  return { users: {} };
+}
+
+function saveDB() {
+  try { 
+    localStorage.setItem(DB_KEY, JSON.stringify(db)); 
+  } catch (e) {
+    memoryStorage[DB_KEY] = db;
+  }
+}
+
 let db = loadDB();
 let activeUser = null;
 let pinInput = "";
@@ -85,18 +144,6 @@ let isCreatingProfile = false;
 let setupStep = 1;
 let tempName = "";
 let justAddedRate = null;
-
-function loadDB() {
-  try {
-    const raw = localStorage.getItem(DB_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return { users: {} };
-}
-
-function saveDB() {
-  try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) {}
-}
 
 function triggerHaptic() {
   if (navigator.vibrate) navigator.vibrate(20);
@@ -113,8 +160,6 @@ function grossOf(netRate) {
   const idx = RATES.indexOf(netRate);
   return idx > -1 ? GROSS_RATES[idx] : Math.round(netRate * (1 + VAT_RATE));
 }
-
-// --- LOGICĂ PIN & AUTENTIFICARE ---
 
 function handleKeypress(num) {
   triggerHaptic();
@@ -180,8 +225,6 @@ function startNewProfileFlow() {
   }
 }
 
-// --- LOGICĂ TURA DE LUCRU ---
-
 function startShift() {
   triggerHaptic();
   const uData = db.users[activeUser];
@@ -210,8 +253,6 @@ function stopShift() {
     }
   }
 }
-
-// --- LOGICĂ TEREN ---
 
 function addEntry(rate) {
   triggerHaptic();
@@ -256,18 +297,18 @@ function exportCSV() {
   a.click();
 }
 
-// --- RENDER ---
-
 function renderKeypad() {
   return `
-    <div class="pin-dots">
-      ${[0,1,2,3].map(i => `<div class="pin-dot ${i < pinInput.length ? 'active' : ''}"></div>`).join('')}
-    </div>
-    <div class="keypad">
-      ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="keypad-btn" onclick="handleKeypress('${n}')">${n}</button>`).join('')}
-      <button class="keypad-btn" style="font-size:12px; color:var(--danger)" onclick="clearPin()">C</button>
-      <button class="keypad-btn" onclick="handleKeypress('0')">0</button>
-      <button class="keypad-btn" style="font-size:14px; opacity:0" disabled></button>
+    <div class="pin-container">
+      <div class="pin-dots">
+        ${[0,1,2,3].map(i => `<div class="pin-dot ${i < pinInput.length ? 'active' : ''}"></div>`).join('')}
+      </div>
+      <div class="keypad">
+        ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="keypad-btn" onclick="handleKeypress('${n}')">${n}</button>`).join('')}
+        <button class="keypad-btn action-btn" style="color:var(--danger)" onclick="clearPin()">Șterge</button>
+        <button class="keypad-btn" onclick="handleKeypress('0')">0</button>
+        <button class="keypad-btn action-btn" style="opacity:0" disabled></button>
+      </div>
     </div>
   `;
 }
@@ -283,9 +324,9 @@ function render() {
 
   if (isCreatingProfile && setupStep === 1) {
     root.innerHTML = `
-      <div style="padding-top: 40px; text-align: center;">
-        <div style="font-size: 26px; font-weight: 800; color: var(--accent); margin-bottom: 8px;">REVIZIO 2.0</div>
-        <p style="color: var(--ink-soft); font-size: 14px; margin-bottom: 24px;">Configurare profil nou</p>
+      <div style="padding-top: 30px; text-align: center;">
+        <div style="font-size: 28px; font-weight: 800; color: var(--accent); margin-bottom: 8px;">REVIZIO 2.0</div>
+        <p style="color: var(--ink-soft); font-size: 14px; margin-bottom: 30px;">Configurare profil nou</p>
         <div class="card">
           <input type="text" id="nameInput" class="input-field" placeholder="Numele tău (ex: Marius)" />
           <button class="btn-main" onclick="
@@ -301,9 +342,9 @@ function render() {
 
   if (isCreatingProfile && setupStep === 2) {
     root.innerHTML = `
-      <div style="padding-top: 40px; text-align: center;">
-        <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Setează un PIN (4 cifre)</div>
-        <p style="color: var(--ink-soft); font-size: 13px;">Profil: <b>${tempName}</b></p>
+      <div style="padding-top: 20px; text-align: center; display:flex; flex-direction:column; flex:1;">
+        <div style="font-size: 22px; font-weight: 700; margin-bottom: 6px;">Setează un PIN (4 cifre)</div>
+        <p style="color: var(--ink-soft); font-size: 14px;">Profil: <b>${tempName}</b></p>
         ${renderKeypad()}
       </div>
     `;
@@ -312,14 +353,14 @@ function render() {
 
   if (!activeUser) {
     root.innerHTML = `
-      <div style="padding-top: 40px; text-align: center;">
-        <div style="font-size: 26px; font-weight: 800; color: var(--accent); margin-bottom: 6px;">REVIZIO</div>
-        <p style="color: var(--ink-soft); font-size: 13px; margin-bottom: 20px;">Introdu PIN-ul de acces</p>
+      <div style="padding-top: 30px; text-align: center; display:flex; flex-direction:column; flex:1;">
+        <div style="font-size: 28px; font-weight: 800; color: var(--accent); margin-bottom: 6px; letter-spacing: 1px;">REVIZIO</div>
+        <p style="color: var(--ink-soft); font-size: 14px; margin-bottom: 10px;">Introdu codul PIN</p>
         
         ${renderKeypad()}
 
-        <div style="margin-top: 30px;">
-          <button onclick="startNewProfileFlow()" style="background:none; border:none; color:var(--accent); font-size:13px; font-weight:600; cursor:pointer;">
+        <div style="margin-top: 10px; margin-bottom: 10px;">
+          <button onclick="startNewProfileFlow()" style="background:none; border:none; color:var(--accent); font-size:14px; font-weight:600; cursor:pointer;">
             + Adaugă alt profil
           </button>
         </div>
@@ -328,7 +369,6 @@ function render() {
     return;
   }
 
-  // --- ECRAN PRINCIPAL ---
   const uData = db.users[activeUser];
   const tKey = todayKey();
   const mKey = monthKey();
@@ -352,7 +392,6 @@ function render() {
   });
 
   root.innerHTML = `
-    <!-- Top Bar -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
       <div>
         <div style="font-size: 20px; font-weight: 800; color: var(--accent);">REVIZIO</div>
@@ -363,7 +402,6 @@ function render() {
       </button>
     </div>
 
-    <!-- CONTROL TURĂ (START / STOP) -->
     <div class="card" style="text-align: center;">
       ${!currentShift.start && !currentShift.active ? `
         <div style="font-size: 13px; color: var(--ink-soft); margin-bottom: 12px;">Tura ta nu a început încă pentru astăzi.</div>
@@ -380,7 +418,6 @@ function render() {
       `}
     </div>
 
-    <!-- Card Astăzi -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
         <span style="font-size: 11px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase;">Astăzi</span>
@@ -403,7 +440,6 @@ function render() {
       `}
     </div>
 
-    <!-- 1-TAP RATE BUTTONS -->
     <div class="btn-grid">
       ${RATES.map((rate, i) => `
         <button onclick="addEntry(${rate})" ${!currentShift.active ? 'disabled' : ''} class="btn-rate ${justAddedRate === rate ? 'just-added' : ''}">
@@ -420,7 +456,6 @@ function render() {
       </button>
     ` : ''}
 
-    <!-- Card Lună -->
     <div class="card">
       <div style="font-size: 11px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 8px;">Luna Curentă (${mKey})</div>
       <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
@@ -439,4 +474,3 @@ render();
 </script>
 </body>
 </html>
-
