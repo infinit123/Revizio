@@ -7,40 +7,59 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Revizio">
-<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23378add'><rect width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' font-weight='bold' fill='white' text-anchor='middle'>R</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007AFF'><rect width='100' height='100' rx='22'/><text x='50' y='67' font-size='52' font-weight='800' fill='white' text-anchor='middle' font-family='-apple-system'>R</text></svg>">
 
 <style>
   :root {
-    --accent: #378add;
-    --accent-light: #122238;
-    --ink: #f0f2f5;
-    --ink-soft: #a0a6b0;
-    --ink-faint: #6c727e;
+    --accent: #0a84ff;
+    --accent-glow: rgba(10, 132, 255, 0.35);
+    --ink: #ffffff;
+    --ink-soft: rgba(255, 255, 255, 0.65);
+    --ink-faint: rgba(255, 255, 255, 0.4);
     --bg: #000000;
-    --surface: #111315;
-    --border: #22252a;
-    --good: #24a17f;
-    --good-bg: #0b211a;
-    --warn: #dd902d;
-    --warn-bg: #24190b;
-    --danger: #e55353;
-    --shadow: 0 4px 12px rgba(0,0,0,0.5);
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-shine: rgba(255, 255, 255, 0.25);
+    --good: #30d158;
+    --good-bg: rgba(48, 209, 88, 0.15);
+    --warn: #ff9f0a;
+    --warn-bg: rgba(255, 159, 10, 0.15);
+    --danger: #ff453a;
+    --shadow-ios: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  
   html, body {
     margin: 0; padding: 0;
-    background: var(--bg);
+    background: #000000;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
     height: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Ambient Blur Background Effects */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(10, 132, 255, 0.25) 0%, rgba(0,0,0,0) 70%);
+    z-index: 0;
+    pointer-events: none;
   }
 
   #root { 
+    position: relative;
+    z-index: 1;
     min-height: 100vh; 
     padding: 16px 16px 40px; 
-    max-width: 480px; 
+    max-width: 440px; 
     margin: 0 auto; 
     display: flex;
     flex-direction: column;
@@ -48,62 +67,151 @@
 
   button, input, select { font-family: inherit; outline: none; }
   
-  .card { background: var(--surface); border-radius: 18px; padding: 18px; border: 1px solid var(--border); margin-bottom: 14px; box-shadow: var(--shadow); }
-  
-  .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
-  .btn-rate {
-    background: var(--surface); color: var(--ink); border: 1px solid var(--border);
-    border-radius: 16px; padding: 16px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px;
-    box-shadow: var(--shadow); transition: transform 0.1s ease; cursor: pointer;
+  /* Modern Glass Card Style */
+  .card { 
+    background: var(--glass-bg); 
+    backdrop-filter: blur(25px) saturate(190%);
+    -webkit-backdrop-filter: blur(25px) saturate(190%);
+    border-radius: 24px; 
+    padding: 20px; 
+    border: 1px solid var(--glass-border); 
+    margin-bottom: 16px; 
+    box-shadow: var(--shadow-ios);
+    position: relative;
+    overflow: hidden;
   }
-  .btn-rate:active { transform: scale(0.93); }
-  .btn-rate.just-added { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn-rate:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--glass-shine), transparent);
+  }
+
+  .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
   
-  .progress-bg { height: 10px; background: #1a1d21; border-radius: 6px; overflow: hidden; }
-  .progress-bar { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+  .btn-rate {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: var(--ink); 
+    border: 1px solid var(--glass-border);
+    border-radius: 20px; 
+    padding: 18px 8px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 4px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); 
+    cursor: pointer;
+  }
   
-  .btn-main { background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 700; width: 100%; cursor: pointer; }
-  .btn-good { background: var(--good); color: #fff; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 700; width: 100%; cursor: pointer; }
-  .btn-danger { background: var(--danger); color: #fff; border: none; border-radius: 12px; padding: 10px; font-size: 13px; font-weight: 600; width: 100%; cursor: pointer; }
+  .btn-rate:active { transform: scale(0.92); background: rgba(255, 255, 255, 0.18); }
+  .btn-rate.just-added { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+  .btn-rate:disabled { opacity: 0.25; cursor: not-allowed; transform: none !important; }
   
-  .input-field { background: #1a1d21; border: 1px solid var(--border); border-radius: 12px; padding: 12px; color: #fff; font-size: 16px; width: 100%; margin-bottom: 12px; text-align: center; }
+  .progress-bg { height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; padding: 2px; }
+  .progress-bar { height: 100%; border-radius: 6px; transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
   
-  /* iOS Style Bottom Lock Screen Pin Pad */
+  .btn-main { 
+    background: var(--accent); 
+    color: #fff; 
+    border: none; 
+    border-radius: 16px; 
+    padding: 16px; 
+    font-size: 16px; 
+    font-weight: 700; 
+    width: 100%; 
+    cursor: pointer;
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+  
+  .btn-good { 
+    background: linear-gradient(135deg, #30d158, #248a3d); 
+    color: #fff; 
+    border: none; 
+    border-radius: 18px; 
+    padding: 18px; 
+    font-size: 17px; 
+    font-weight: 700; 
+    width: 100%; 
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(48, 209, 88, 0.35);
+  }
+  
+  .btn-danger { 
+    background: rgba(255, 69, 58, 0.2); 
+    border: 1px solid rgba(255, 69, 58, 0.4);
+    color: var(--danger); 
+    border-radius: 14px; 
+    padding: 12px; 
+    font-size: 13px; 
+    font-weight: 600; 
+    width: 100%; 
+    cursor: pointer; 
+  }
+  
+  .input-field { 
+    background: rgba(255, 255, 255, 0.08); 
+    border: 1px solid var(--glass-border); 
+    border-radius: 16px; 
+    padding: 14px; 
+    color: #fff; 
+    font-size: 17px; 
+    width: 100%; 
+    margin-bottom: 14px; 
+    text-align: center; 
+  }
+  
+  /* iOS Pin Pad Bottom Container */
   .pin-container {
     margin-top: auto;
-    padding-bottom: 20px;
+    padding-bottom: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
   }
 
-  .pin-dots { display: flex; justify-content: center; gap: 16px; margin-bottom: 28px; }
-  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #555; background: transparent; transition: all 0.15s ease; }
-  .pin-dot.active { background: #fff; border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+  .pin-dots { display: flex; justify-content: center; gap: 18px; margin-bottom: 32px; }
+  .pin-dot { 
+    width: 15px; height: 15px; 
+    border-radius: 50%; 
+    border: 1.5px solid rgba(255,255,255,0.4); 
+    background: transparent; 
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); 
+  }
+  .pin-dot.active { 
+    background: #fff; 
+    border-color: #fff; 
+    box-shadow: 0 0 12px rgba(255,255,255,0.8); 
+  }
 
-  .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px 24px; max-width: 320px; width: 100%; margin: 0 auto; }
+  .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 28px; max-width: 320px; width: 100%; margin: 0 auto; }
+  
   .keypad-btn { 
     background: rgba(255, 255, 255, 0.12); 
-    border: none; 
+    border: 1px solid rgba(255, 255, 255, 0.08); 
     border-radius: 50%; 
-    width: 72px; 
-    height: 72px; 
-    font-size: 28px; 
-    font-weight: 400; 
+    width: 76px; 
+    height: 76px; 
+    font-size: 30px; 
+    font-weight: 300; 
     color: #fff; 
     margin: 0 auto; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     cursor: pointer; 
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition: background 0.15s ease, transform 0.1s ease;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: all 0.15s ease;
   }
+  
   .keypad-btn:active { background: rgba(255, 255, 255, 0.35); transform: scale(0.92); }
-  .keypad-btn.action-btn { background: transparent; font-size: 14px; font-weight: 500; }
+  .keypad-btn.action-btn { background: transparent; border: none; font-size: 15px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -146,7 +254,7 @@ let tempName = "";
 let justAddedRate = null;
 
 function triggerHaptic() {
-  if (navigator.vibrate) navigator.vibrate(20);
+  if (navigator.vibrate) navigator.vibrate(25);
 }
 
 function todayKey(d = new Date()) { return d.toISOString().slice(0, 10); }
@@ -324,9 +432,9 @@ function render() {
 
   if (isCreatingProfile && setupStep === 1) {
     root.innerHTML = `
-      <div style="padding-top: 30px; text-align: center;">
-        <div style="font-size: 28px; font-weight: 800; color: var(--accent); margin-bottom: 8px;">REVIZIO 2.0</div>
-        <p style="color: var(--ink-soft); font-size: 14px; margin-bottom: 30px;">Configurare profil nou</p>
+      <div style="padding-top: 40px; text-align: center;">
+        <div style="font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 6px; letter-spacing: -0.5px;">REVIZIO</div>
+        <p style="color: var(--ink-soft); font-size: 15px; margin-bottom: 32px;">Configurare profil nou</p>
         <div class="card">
           <input type="text" id="nameInput" class="input-field" placeholder="Numele tău (ex: Marius)" />
           <button class="btn-main" onclick="
@@ -343,8 +451,8 @@ function render() {
   if (isCreatingProfile && setupStep === 2) {
     root.innerHTML = `
       <div style="padding-top: 20px; text-align: center; display:flex; flex-direction:column; flex:1;">
-        <div style="font-size: 22px; font-weight: 700; margin-bottom: 6px;">Setează un PIN (4 cifre)</div>
-        <p style="color: var(--ink-soft); font-size: 14px;">Profil: <b>${tempName}</b></p>
+        <div style="font-size: 24px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px;">Setează un PIN (4 cifre)</div>
+        <p style="color: var(--ink-soft); font-size: 15px;">Profil: <b style="color:#fff;">${tempName}</b></p>
         ${renderKeypad()}
       </div>
     `;
@@ -353,14 +461,14 @@ function render() {
 
   if (!activeUser) {
     root.innerHTML = `
-      <div style="padding-top: 30px; text-align: center; display:flex; flex-direction:column; flex:1;">
-        <div style="font-size: 28px; font-weight: 800; color: var(--accent); margin-bottom: 6px; letter-spacing: 1px;">REVIZIO</div>
-        <p style="color: var(--ink-soft); font-size: 14px; margin-bottom: 10px;">Introdu codul PIN</p>
+      <div style="padding-top: 40px; text-align: center; display:flex; flex-direction:column; flex:1;">
+        <div style="font-size: 34px; font-weight: 800; color: #fff; margin-bottom: 6px; letter-spacing: -0.5px;">REVIZIO</div>
+        <p style="color: var(--ink-soft); font-size: 15px; margin-bottom: 10px;">Introdu codul PIN</p>
         
         ${renderKeypad()}
 
-        <div style="margin-top: 10px; margin-bottom: 10px;">
-          <button onclick="startNewProfileFlow()" style="background:none; border:none; color:var(--accent); font-size:14px; font-weight:600; cursor:pointer;">
+        <div style="margin-top: 14px; margin-bottom: 10px;">
+          <button onclick="startNewProfileFlow()" style="background:none; border:none; color:var(--accent); font-size:15px; font-weight:600; cursor:pointer;">
             + Adaugă alt profil
           </button>
         </div>
@@ -392,79 +500,81 @@ function render() {
   });
 
   root.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div>
-        <div style="font-size: 20px; font-weight: 800; color: var(--accent);">REVIZIO</div>
-        <div style="font-size: 12px; color: var(--ink-soft);">Operator: <b>${activeUser}</b></div>
+        <div style="font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.5px;">REVIZIO</div>
+        <div style="font-size: 13px; color: var(--ink-soft);">Operator: <b style="color:#fff;">${activeUser}</b></div>
       </div>
-      <button onclick="logout()" style="background: var(--surface); border: 1px solid var(--border); color: var(--warn); border-radius: 10px; padding: 6px 10px; font-size: 11px; font-weight: 600; cursor:pointer;">
+      <button onclick="logout()" style="background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); color: var(--warn); border-radius: 12px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor:pointer;">
         Ieșire (Lock)
       </button>
     </div>
 
     <div class="card" style="text-align: center;">
       ${!currentShift.start && !currentShift.active ? `
-        <div style="font-size: 13px; color: var(--ink-soft); margin-bottom: 12px;">Tura ta nu a început încă pentru astăzi.</div>
+        <div style="font-size: 14px; color: var(--ink-soft); margin-bottom: 14px;">Tura ta nu a început încă pentru astăzi.</div>
         <button class="btn-good" onclick="startShift()">▶️ ÎNCEPE TURA</button>
       ` : currentShift.active ? `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <span style="font-size: 12px; color: var(--good); font-weight: 700;">● TURĂ ACTIVĂ</span>
-          <span style="font-size: 12px; color: var(--ink-soft);">Start la ora: <b>${currentShift.start}</b></span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 13px; color: var(--good); font-weight: 700; display:flex; align-items:center; gap:6px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:var(--good); display:inline-block; box-shadow:0 0 8px var(--good);"></span> TURĂ ACTIVĂ
+          </span>
+          <span style="font-size: 13px; color: var(--ink-soft);">Start la ora: <b style="color:#fff;">${currentShift.start}</b></span>
         </div>
         <button class="btn-danger" onclick="stopShift()">⏹️ ÎNCHEIE TURA DE AZI</button>
       ` : `
-        <div style="font-size: 13px; color: var(--warn); font-weight: 600;">TURĂ ÎNCHEIATĂ PE AZI (${currentShift.start} - ${currentShift.end})</div>
-        <div style="font-size: 11px; color: var(--ink-faint); margin-top: 4px;">Tura se va reseta automat mâine dimineață.</div>
+        <div style="font-size: 14px; color: var(--warn); font-weight: 600;">TURĂ ÎNCHEIATĂ PE AZI (${currentShift.start} - ${currentShift.end})</div>
+        <div style="font-size: 12px; color: var(--ink-faint); margin-top: 4px;">Tura se va reseta automat mâine dimineață.</div>
       `}
     </div>
 
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-        <span style="font-size: 11px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase;">Astăzi</span>
-        <span style="font-size: 11px; color: var(--ink-faint);">țintă ${fmtRON(DAILY_TARGET)}</span>
+        <span style="font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px;">Astăzi</span>
+        <span style="font-size: 12px; color: var(--ink-faint);">țintă ${fmtRON(DAILY_TARGET)}</span>
       </div>
-      <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;">
-        <span style="font-size: 32px; font-weight: 800;">${fmtRON(todaySum).replace(' lei','')}</span>
-        <span style="font-size: 14px; color: var(--ink-faint);">lei net</span>
+      <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;">
+        <span style="font-size: 36px; font-weight: 800; letter-spacing: -1px;">${fmtRON(todaySum).replace(' lei','')}</span>
+        <span style="font-size: 15px; color: var(--ink-soft);">lei net</span>
       </div>
-      <div class="progress-bg" style="margin-bottom: 10px;">
-        <div class="progress-bar" style="width: ${todayProgress}%; background: ${todayProgress >= 100 ? 'var(--good)' : 'var(--accent)'};"></div>
+      <div class="progress-bg" style="margin-bottom: 12px;">
+        <div class="progress-bar" style="width: ${todayProgress}%; background: ${todayProgress >= 100 ? 'linear-gradient(90deg, #30d158, #34c759)' : 'linear-gradient(90deg, #0a84ff, #5e5ce6)'};"></div>
       </div>
       ${todayOverage > 0 ? `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--good-bg); border-radius: 10px; padding: 8px 12px;">
-          <span style="font-size: 12px; color: var(--good); font-weight: 600;">Bonus azi (+31%)</span>
-          <span style="font-size: 14px; font-weight: 700; color: var(--good);">+${fmtRON(todayBonus)}</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--good-bg); border: 1px solid rgba(48, 209, 88, 0.3); border-radius: 12px; padding: 10px 14px;">
+          <span style="font-size: 13px; color: var(--good); font-weight: 600;">Bonus azi (+31%)</span>
+          <span style="font-size: 15px; font-weight: 700; color: var(--good);">+${fmtRON(todayBonus)}</span>
         </div>
       ` : `
-        <div style="font-size: 12px; color: var(--ink-soft);">Rămas de realizat: <b>${fmtRON(Math.max(0, DAILY_TARGET - todaySum))}</b></div>
+        <div style="font-size: 13px; color: var(--ink-soft);">Rămas de realizat: <b style="color:#fff;">${fmtRON(Math.max(0, DAILY_TARGET - todaySum))}</b></div>
       `}
     </div>
 
     <div class="btn-grid">
       ${RATES.map((rate, i) => `
         <button onclick="addEntry(${rate})" ${!currentShift.active ? 'disabled' : ''} class="btn-rate ${justAddedRate === rate ? 'just-added' : ''}">
-          <span style="font-size: 22px; font-weight: 800;">${GROSS_RATES[i]}</span>
-          <span style="font-size: 10px; opacity: 0.7;">lei cu TVA</span>
-          <span style="font-size: 10px; color: var(--accent); margin-top: 2px;">${rate.toFixed(1)} net</span>
+          <span style="font-size: 24px; font-weight: 800; letter-spacing:-0.5px;">${GROSS_RATES[i]}</span>
+          <span style="font-size: 11px; opacity: 0.7;">lei cu TVA</span>
+          <span style="font-size: 11px; color: var(--accent); margin-top: 2px; font-weight:600;">${rate.toFixed(1)} net</span>
         </button>
       `).join('')}
     </div>
 
     ${todayEntries.length > 0 && currentShift.active ? `
-      <button onclick="undoLastEntry()" style="width: 100%; font-size: 12px; font-weight: 600; color: var(--warn); background: var(--warn-bg); border: none; border-radius: 12px; padding: 10px; margin-bottom: 14px; cursor:pointer;">
+      <button onclick="undoLastEntry()" style="width: 100%; font-size: 13px; font-weight: 600; color: var(--warn); background: var(--warn-bg); border: 1px solid rgba(255, 159, 10, 0.3); border-radius: 14px; padding: 12px; margin-bottom: 16px; cursor:pointer;">
         Anulează ultima adăugare (${grossOf(todayEntries[todayEntries.length - 1])} lei)
       </button>
     ` : ''}
 
     <div class="card">
-      <div style="font-size: 11px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 8px;">Luna Curentă (${mKey})</div>
-      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-        <span style="font-size: 22px; font-weight: 800; color: var(--good);">${fmtRON(monthSum)}</span>
-        <span style="font-size: 12px; color: var(--ink-faint);">${monthCount} verificări</span>
+      <div style="font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Luna Curentă (${mKey})</div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <span style="font-size: 24px; font-weight: 800; color: var(--good); letter-spacing:-0.5px;">${fmtRON(monthSum)}</span>
+        <span style="font-size: 13px; color: var(--ink-soft);">${monthCount} verificări</span>
       </div>
     </div>
 
-    <button onclick="exportCSV()" style="width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--ink); border-radius: 12px; padding: 12px; font-size: 12px; font-weight: 600; cursor:pointer;">
+    <button onclick="exportCSV()" style="width: 100%; background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); color: var(--ink); border-radius: 16px; padding: 14px; font-size: 13px; font-weight: 600; cursor:pointer;">
       📥 Export Excel / CSV
     </button>
   `;
