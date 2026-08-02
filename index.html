@@ -1,3 +1,11 @@
+Iată codul complet actualizat care include:
+ * Tranziție fluidă la introducerea PIN-ului (ecranul de PIN face fade-out și scale-down, iar interfața principală apare elegant cu blur-in).
+ * Efecte micro-interactive pe fiecare acțiune:
+   * Ripple effect (undă de lumină) pe butoane la apăsare.
+   * Pulse vizual pe ecran la salvare/adăugare date.
+   * Feedback vizual pe badge-ul de status la pornirea/oprirea turei.
+ * Comutator Light / Dark Mode nativ iOS (stil Glass Pill), cu ajustarea automată a transparențelor și fundalurilor sticlei.
+Codul complet pentru index.html:
 <!DOCTYPE html>
 <html lang="ro">
 <head>
@@ -25,19 +33,40 @@
     --warn: #ff9f0a;
     --warn-bg: rgba(255, 159, 10, 0.15);
     --danger: #ff453a;
-    --shadow-ios: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+    --shadow-ios: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    --ambient-glow: radial-gradient(circle, rgba(10, 132, 255, 0.25) 0%, rgba(0,0,0,0) 70%);
+  }
+
+  [data-theme="light"] {
+    --accent: #007aff;
+    --accent-glow: rgba(0, 122, 255, 0.25);
+    --ink: #1c1c1e;
+    --ink-soft: rgba(60, 60, 67, 0.7);
+    --ink-faint: rgba(60, 60, 67, 0.4);
+    --bg: #f2f2f7;
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.8);
+    --glass-shine: rgba(255, 255, 255, 0.9);
+    --good: #28cd41;
+    --good-bg: rgba(40, 205, 65, 0.15);
+    --warn: #ff9500;
+    --warn-bg: rgba(255, 149, 0, 0.15);
+    --danger: #ff3b30;
+    --shadow-ios: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+    --ambient-glow: radial-gradient(circle, rgba(0, 122, 255, 0.12) 0%, rgba(242,242,247,0) 70%);
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   
   html, body {
     margin: 0; padding: 0;
-    background: #000000;
+    background: var(--bg);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
     height: 100%;
     overflow-x: hidden;
+    transition: background-color 0.4s ease, color 0.4s ease;
   }
 
   /* Ambient Blur Background Effects */
@@ -47,11 +76,12 @@
     top: -100px;
     left: 50%;
     transform: translateX(-50%);
-    width: 320px;
-    height: 320px;
-    background: radial-gradient(circle, rgba(10, 132, 255, 0.25) 0%, rgba(0,0,0,0) 70%);
+    width: 380px;
+    height: 380px;
+    background: var(--ambient-glow);
     z-index: 0;
     pointer-events: none;
+    transition: background 0.4s ease;
   }
 
   #root { 
@@ -63,6 +93,35 @@
     margin: 0 auto; 
     display: flex;
     flex-direction: column;
+  }
+
+  /* Animations & Transitions */
+  .fade-enter {
+    animation: iosBlurIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .fade-exit {
+    animation: iosBlurOut 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  }
+
+  @keyframes iosBlurIn {
+    0% { opacity: 0; transform: scale(0.96); filter: blur(12px); }
+    100% { opacity: 1; transform: scale(1); filter: blur(0px); }
+  }
+
+  @keyframes iosBlurOut {
+    0% { opacity: 1; transform: scale(1); filter: blur(0px); }
+    100% { opacity: 0; transform: scale(0.92); filter: blur(16px); }
+  }
+
+  @keyframes actionPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.985); }
+    100% { transform: scale(1); }
+  }
+
+  .pulse-active {
+    animation: actionPulse 0.25s ease-out;
   }
 
   button, input, select { font-family: inherit; outline: none; }
@@ -79,6 +138,7 @@
     box-shadow: var(--shadow-ios);
     position: relative;
     overflow: hidden;
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   }
 
   .card::before {
@@ -89,10 +149,38 @@
     background: linear-gradient(90deg, transparent, var(--glass-shine), transparent);
   }
 
+  /* Interactive Button Base with Touch Feedback */
+  .ios-btn {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s ease, opacity 0.2s ease;
+  }
+
+  .ios-btn:active {
+    transform: scale(0.94) !important;
+  }
+
+  /* Ripple Effect */
+  .ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(0);
+    animation: ripple 0.4s linear;
+    pointer-events: none;
+  }
+
+  @keyframes ripple {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
   .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
   
   .btn-rate {
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     color: var(--ink); 
@@ -103,16 +191,14 @@
     flex-direction: column; 
     align-items: center; 
     gap: 4px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); 
+    box-shadow: var(--shadow-ios);
     cursor: pointer;
   }
   
-  .btn-rate:active { transform: scale(0.92); background: rgba(255, 255, 255, 0.18); }
-  .btn-rate.just-added { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
-  .btn-rate:disabled { opacity: 0.25; cursor: not-allowed; transform: none !important; }
+  .btn-rate.just-added { background: var(--accent) !important; color: #fff !important; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+  .btn-rate:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
   
-  .progress-bg { height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; padding: 2px; }
+  .progress-bg { height: 12px; background: rgba(120, 120, 128, 0.16); border-radius: 8px; overflow: hidden; padding: 2px; }
   .progress-bar { height: 100%; border-radius: 6px; transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
   
   .btn-main { 
@@ -142,8 +228,8 @@
   }
   
   .btn-danger { 
-    background: rgba(255, 69, 58, 0.2); 
-    border: 1px solid rgba(255, 69, 58, 0.4);
+    background: rgba(255, 69, 58, 0.15); 
+    border: 1px solid rgba(255, 69, 58, 0.3);
     color: var(--danger); 
     border-radius: 14px; 
     padding: 12px; 
@@ -154,17 +240,45 @@
   }
   
   .input-field { 
-    background: rgba(255, 255, 255, 0.08); 
+    background: var(--glass-bg); 
     border: 1px solid var(--glass-border); 
     border-radius: 16px; 
     padding: 14px; 
-    color: #fff; 
+    color: var(--ink); 
     font-size: 17px; 
     width: 100%; 
     margin-bottom: 14px; 
     text-align: center; 
   }
   
+  /* Theme Toggle Pill */
+  .theme-toggle {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(15px);
+    border-radius: 30px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .theme-btn {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .theme-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px var(--accent-glow);
+  }
+
   /* iOS Pin Pad Bottom Container */
   .pin-container {
     margin-top: auto;
@@ -179,27 +293,27 @@
   .pin-dot { 
     width: 15px; height: 15px; 
     border-radius: 50%; 
-    border: 1.5px solid rgba(255,255,255,0.4); 
+    border: 1.5px solid var(--ink-soft); 
     background: transparent; 
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); 
   }
   .pin-dot.active { 
-    background: #fff; 
-    border-color: #fff; 
-    box-shadow: 0 0 12px rgba(255,255,255,0.8); 
+    background: var(--ink); 
+    border-color: var(--ink); 
+    box-shadow: 0 0 12px var(--ink-soft); 
   }
 
   .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 28px; max-width: 320px; width: 100%; margin: 0 auto; }
   
   .keypad-btn { 
-    background: rgba(255, 255, 255, 0.12); 
-    border: 1px solid rgba(255, 255, 255, 0.08); 
+    background: var(--glass-bg); 
+    border: 1px solid var(--glass-border); 
     border-radius: 50%; 
     width: 76px; 
     height: 76px; 
     font-size: 30px; 
     font-weight: 300; 
-    color: #fff; 
+    color: var(--ink); 
     margin: 0 auto; 
     display: flex; 
     align-items: center; 
@@ -207,15 +321,15 @@
     cursor: pointer; 
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    transition: all 0.15s ease;
+    transition: transform 0.15s ease, background 0.15s ease;
   }
   
-  .keypad-btn:active { background: rgba(255, 255, 255, 0.35); transform: scale(0.92); }
+  .keypad-btn:active { background: rgba(120, 120, 128, 0.3); transform: scale(0.92); }
   .keypad-btn.action-btn { background: transparent; border: none; font-size: 15px; font-weight: 500; }
 </style>
 </head>
-<body>
-<div id="root"></div>
+<body data-theme="dark">
+<div id="root" class="fade-enter"></div>
 
 <script>
 const VAT_RATE = 0.21;
@@ -224,6 +338,7 @@ const RATES = GROSS_RATES.map(r => Math.round((r / (1 + VAT_RATE)) * 100) / 100)
 const DAILY_TARGET = 1500;
 const BONUS_RATE = 0.31;
 const DB_KEY = 'revizio_v2_db';
+const THEME_KEY = 'revizio_theme';
 
 let memoryStorage = {};
 
@@ -252,9 +367,57 @@ let isCreatingProfile = false;
 let setupStep = 1;
 let tempName = "";
 let justAddedRate = null;
+let currentTheme = localStorage.getItem(THEME_KEY) || 'dark';
+
+document.body.setAttribute('data-theme', currentTheme);
+
+function setTheme(theme) {
+  triggerHaptic();
+  currentTheme = theme;
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem(THEME_KEY, theme);
+  render();
+}
 
 function triggerHaptic() {
-  if (navigator.vibrate) navigator.vibrate(25);
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+
+function createRipple(e) {
+  const btn = e.currentTarget;
+  const circle = document.createElement("span");
+  const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+  const radius = diameter / 2;
+  const rect = btn.getBoundingClientRect();
+
+  circle.style.width = circle.style.height = `${diameter}px`;
+  circle.style.left = `${e.clientX - rect.left - radius}px`;
+  circle.style.top = `${e.clientY - rect.top - radius}px`;
+  circle.classList.add("ripple-effect");
+
+  const ripple = btn.getElementsByClassName("ripple-effect")[0];
+  if (ripple) ripple.remove();
+
+  btn.appendChild(circle);
+}
+
+function triggerScreenPulse() {
+  const root = document.getElementById('root');
+  root.classList.remove('pulse-active');
+  void root.offsetWidth; // Force reflow
+  root.classList.add('pulse-active');
+}
+
+function transitionView(callback) {
+  const root = document.getElementById('root');
+  root.classList.remove('fade-enter');
+  root.classList.add('fade-exit');
+  
+  setTimeout(() => {
+    callback();
+    root.classList.remove('fade-exit');
+    root.classList.add('fade-enter');
+  }, 280);
 }
 
 function todayKey(d = new Date()) { return d.toISOString().slice(0, 10); }
@@ -275,7 +438,7 @@ function handleKeypress(num) {
     pinInput += num;
     render();
     if (pinInput.length === 4) {
-      setTimeout(processPin, 150);
+      setTimeout(processPin, 100);
     }
   }
 }
@@ -288,25 +451,27 @@ function clearPin() {
 
 function processPin() {
   if (isCreatingProfile && setupStep === 2) {
-    db.users[tempName] = {
-      pin: pinInput,
-      days: {},
-      shifts: {}
-    };
+    db.users[tempName] = { pin: pinInput, days: {}, shifts: {} };
     saveDB();
-    activeUser = tempName;
+    const newUser = tempName;
     isCreatingProfile = false;
     setupStep = 1;
     tempName = "";
     pinInput = "";
-    render();
+    transitionView(() => {
+      activeUser = newUser;
+      render();
+    });
   } else {
     const matchedUser = Object.keys(db.users).find(u => db.users[u].pin === pinInput);
     if (matchedUser) {
-      activeUser = matchedUser;
       pinInput = "";
-      render();
+      transitionView(() => {
+        activeUser = matchedUser;
+        render();
+      });
     } else {
+      triggerHaptic();
       alert("PIN incorect!");
       pinInput = "";
       render();
@@ -316,10 +481,12 @@ function processPin() {
 
 function logout() {
   triggerHaptic();
-  activeUser = null;
-  pinInput = "";
-  isCreatingProfile = false;
-  render();
+  transitionView(() => {
+    activeUser = null;
+    pinInput = "";
+    isCreatingProfile = false;
+    render();
+  });
 }
 
 function startNewProfileFlow() {
@@ -333,8 +500,10 @@ function startNewProfileFlow() {
   }
 }
 
-function startShift() {
+function startShift(e) {
+  if(e) createRipple(e);
   triggerHaptic();
+  triggerScreenPulse();
   const uData = db.users[activeUser];
   if (!uData.shifts) uData.shifts = {};
   const tKey = todayKey();
@@ -348,9 +517,11 @@ function startShift() {
   render();
 }
 
-function stopShift() {
+function stopShift(e) {
   if (confirm("Ești sigur că vrei să închei tura de astăzi?")) {
+    if(e) createRipple(e);
     triggerHaptic();
+    triggerScreenPulse();
     const uData = db.users[activeUser];
     const tKey = todayKey();
     if (uData.shifts && uData.shifts[tKey]) {
@@ -362,8 +533,10 @@ function stopShift() {
   }
 }
 
-function addEntry(rate) {
+function addEntry(rate, e) {
+  if(e) createRipple(e);
   triggerHaptic();
+  triggerScreenPulse();
   const uData = db.users[activeUser];
   const tKey = todayKey();
   if (!uData.days[tKey]) uData.days[tKey] = [];
@@ -376,8 +549,10 @@ function addEntry(rate) {
   setTimeout(() => { justAddedRate = null; render(); }, 300);
 }
 
-function undoLastEntry() {
+function undoLastEntry(e) {
+  if(e) createRipple(e);
   triggerHaptic();
+  triggerScreenPulse();
   const uData = db.users[activeUser];
   const tKey = todayKey();
   if (uData.days[tKey] && uData.days[tKey].length > 0) {
@@ -387,7 +562,9 @@ function undoLastEntry() {
   }
 }
 
-function exportCSV() {
+function exportCSV(e) {
+  if(e) createRipple(e);
+  triggerHaptic();
   const uData = db.users[activeUser];
   let csv = 'Data,Start Tura,Stop Tura,Tarif Brut (RON),Tarif Net (RON)\n';
   Object.keys(uData.days).sort().forEach(date => {
@@ -405,6 +582,15 @@ function exportCSV() {
   a.click();
 }
 
+function renderThemeToggle() {
+  return `
+    <div class="theme-toggle">
+      <button class="theme-btn ${currentTheme === 'light' ? 'active' : ''}" onclick="setTheme('light')">☀️ Light</button>
+      <button class="theme-btn ${currentTheme === 'dark' ? 'active' : ''}" onclick="setTheme('dark')">🌙 Dark</button>
+    </div>
+  `;
+}
+
 function renderKeypad() {
   return `
     <div class="pin-container">
@@ -412,9 +598,9 @@ function renderKeypad() {
         ${[0,1,2,3].map(i => `<div class="pin-dot ${i < pinInput.length ? 'active' : ''}"></div>`).join('')}
       </div>
       <div class="keypad">
-        ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="keypad-btn" onclick="handleKeypress('${n}')">${n}</button>`).join('')}
-        <button class="keypad-btn action-btn" style="color:var(--danger)" onclick="clearPin()">Șterge</button>
-        <button class="keypad-btn" onclick="handleKeypress('0')">0</button>
+        ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="keypad-btn ios-btn" onclick="handleKeypress('${n}')">${n}</button>`).join('')}
+        <button class="keypad-btn action-btn ios-btn" style="color:var(--danger)" onclick="clearPin()">Șterge</button>
+        <button class="keypad-btn ios-btn" onclick="handleKeypress('0')">0</button>
         <button class="keypad-btn action-btn" style="opacity:0" disabled></button>
       </div>
     </div>
@@ -432,12 +618,13 @@ function render() {
 
   if (isCreatingProfile && setupStep === 1) {
     root.innerHTML = `
-      <div style="padding-top: 40px; text-align: center;">
-        <div style="font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 6px; letter-spacing: -0.5px;">REVIZIO</div>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">${renderThemeToggle()}</div>
+      <div style="padding-top: 20px; text-align: center;">
+        <div style="font-size: 32px; font-weight: 800; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.5px;">REVIZIO</div>
         <p style="color: var(--ink-soft); font-size: 15px; margin-bottom: 32px;">Configurare profil nou</p>
         <div class="card">
           <input type="text" id="nameInput" class="input-field" placeholder="Numele tău (ex: Marius)" />
-          <button class="btn-main" onclick="
+          <button class="btn-main ios-btn" onclick="
             const val = document.getElementById('nameInput').value.trim();
             if(val) { tempName = val; setupStep = 2; render(); }
             else { alert('Introdu un nume valid'); }
@@ -450,9 +637,10 @@ function render() {
 
   if (isCreatingProfile && setupStep === 2) {
     root.innerHTML = `
-      <div style="padding-top: 20px; text-align: center; display:flex; flex-direction:column; flex:1;">
-        <div style="font-size: 24px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px;">Setează un PIN (4 cifre)</div>
-        <p style="color: var(--ink-soft); font-size: 15px;">Profil: <b style="color:#fff;">${tempName}</b></p>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">${renderThemeToggle()}</div>
+      <div style="padding-top: 10px; text-align: center; display:flex; flex-direction:column; flex:1;">
+        <div style="font-size: 24px; font-weight: 700; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.3px;">Setează un PIN (4 cifre)</div>
+        <p style="color: var(--ink-soft); font-size: 15px;">Profil: <b style="color:var(--ink);">${tempName}</b></p>
         ${renderKeypad()}
       </div>
     `;
@@ -461,14 +649,15 @@ function render() {
 
   if (!activeUser) {
     root.innerHTML = `
-      <div style="padding-top: 40px; text-align: center; display:flex; flex-direction:column; flex:1;">
-        <div style="font-size: 34px; font-weight: 800; color: #fff; margin-bottom: 6px; letter-spacing: -0.5px;">REVIZIO</div>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">${renderThemeToggle()}</div>
+      <div style="padding-top: 20px; text-align: center; display:flex; flex-direction:column; flex:1;">
+        <div style="font-size: 34px; font-weight: 800; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.5px;">REVIZIO</div>
         <p style="color: var(--ink-soft); font-size: 15px; margin-bottom: 10px;">Introdu codul PIN</p>
         
         ${renderKeypad()}
 
         <div style="margin-top: 14px; margin-bottom: 10px;">
-          <button onclick="startNewProfileFlow()" style="background:none; border:none; color:var(--accent); font-size:15px; font-weight:600; cursor:pointer;">
+          <button class="ios-btn" onclick="startNewProfileFlow()" style="background:none; border:none; color:var(--accent); font-size:15px; font-weight:600; cursor:pointer;">
             + Adaugă alt profil
           </button>
         </div>
@@ -502,26 +691,29 @@ function render() {
   root.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div>
-        <div style="font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.5px;">REVIZIO</div>
-        <div style="font-size: 13px; color: var(--ink-soft);">Operator: <b style="color:#fff;">${activeUser}</b></div>
+        <div style="font-size: 22px; font-weight: 800; color: var(--ink); letter-spacing: -0.5px;">REVIZIO</div>
+        <div style="font-size: 13px; color: var(--ink-soft);">Operator: <b style="color:var(--ink);">${activeUser}</b></div>
       </div>
-      <button onclick="logout()" style="background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); color: var(--warn); border-radius: 12px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor:pointer;">
-        Ieșire (Lock)
-      </button>
+      <div style="display:flex; gap:8px; align-items:center;">
+        ${renderThemeToggle()}
+        <button class="ios-btn" onclick="logout()" style="background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); color: var(--warn); border-radius: 12px; padding: 8px 12px; font-size: 12px; font-weight: 600; cursor:pointer;">
+          Ieșire
+        </button>
+      </div>
     </div>
 
     <div class="card" style="text-align: center;">
       ${!currentShift.start && !currentShift.active ? `
         <div style="font-size: 14px; color: var(--ink-soft); margin-bottom: 14px;">Tura ta nu a început încă pentru astăzi.</div>
-        <button class="btn-good" onclick="startShift()">▶️ ÎNCEPE TURA</button>
+        <button class="btn-good ios-btn" onclick="startShift(event)">▶️ ÎNCEPE TURA</button>
       ` : currentShift.active ? `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <span style="font-size: 13px; color: var(--good); font-weight: 700; display:flex; align-items:center; gap:6px;">
             <span style="width:8px; height:8px; border-radius:50%; background:var(--good); display:inline-block; box-shadow:0 0 8px var(--good);"></span> TURĂ ACTIVĂ
           </span>
-          <span style="font-size: 13px; color: var(--ink-soft);">Start la ora: <b style="color:#fff;">${currentShift.start}</b></span>
+          <span style="font-size: 13px; color: var(--ink-soft);">Start la ora: <b style="color:var(--ink);">${currentShift.start}</b></span>
         </div>
-        <button class="btn-danger" onclick="stopShift()">⏹️ ÎNCHEIE TURA DE AZI</button>
+        <button class="btn-danger ios-btn" onclick="stopShift(event)">⏹️ ÎNCHEIE TURA DE AZI</button>
       ` : `
         <div style="font-size: 14px; color: var(--warn); font-weight: 600;">TURĂ ÎNCHEIATĂ PE AZI (${currentShift.start} - ${currentShift.end})</div>
         <div style="font-size: 12px; color: var(--ink-faint); margin-top: 4px;">Tura se va reseta automat mâine dimineață.</div>
@@ -534,11 +726,11 @@ function render() {
         <span style="font-size: 12px; color: var(--ink-faint);">țintă ${fmtRON(DAILY_TARGET)}</span>
       </div>
       <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;">
-        <span style="font-size: 36px; font-weight: 800; letter-spacing: -1px;">${fmtRON(todaySum).replace(' lei','')}</span>
+        <span style="font-size: 36px; font-weight: 800; letter-spacing: -1px; color: var(--ink);">${fmtRON(todaySum).replace(' lei','')}</span>
         <span style="font-size: 15px; color: var(--ink-soft);">lei net</span>
       </div>
       <div class="progress-bg" style="margin-bottom: 12px;">
-        <div class="progress-bar" style="width: ${todayProgress}%; background: ${todayProgress >= 100 ? 'linear-gradient(90deg, #30d158, #34c759)' : 'linear-gradient(90deg, #0a84ff, #5e5ce6)'};"></div>
+        <div class="progress-bar" style="width: ${todayProgress}%; background: ${todayProgress >= 100 ? 'linear-gradient(90deg, #30d158, #34c759)' : 'linear-gradient(90deg, var(--accent), #5e5ce6)'};"></div>
       </div>
       ${todayOverage > 0 ? `
         <div style="display: flex; justify-content: space-between; align-items: center; background: var(--good-bg); border: 1px solid rgba(48, 209, 88, 0.3); border-radius: 12px; padding: 10px 14px;">
@@ -546,13 +738,13 @@ function render() {
           <span style="font-size: 15px; font-weight: 700; color: var(--good);">+${fmtRON(todayBonus)}</span>
         </div>
       ` : `
-        <div style="font-size: 13px; color: var(--ink-soft);">Rămas de realizat: <b style="color:#fff;">${fmtRON(Math.max(0, DAILY_TARGET - todaySum))}</b></div>
+        <div style="font-size: 13px; color: var(--ink-soft);">Rămas de realizat: <b style="color:var(--ink);">${fmtRON(Math.max(0, DAILY_TARGET - todaySum))}</b></div>
       `}
     </div>
 
     <div class="btn-grid">
       ${RATES.map((rate, i) => `
-        <button onclick="addEntry(${rate})" ${!currentShift.active ? 'disabled' : ''} class="btn-rate ${justAddedRate === rate ? 'just-added' : ''}">
+        <button onclick="addEntry(${rate}, event)" ${!currentShift.active ? 'disabled' : ''} class="btn-rate ios-btn ${justAddedRate === rate ? 'just-added' : ''}">
           <span style="font-size: 24px; font-weight: 800; letter-spacing:-0.5px;">${GROSS_RATES[i]}</span>
           <span style="font-size: 11px; opacity: 0.7;">lei cu TVA</span>
           <span style="font-size: 11px; color: var(--accent); margin-top: 2px; font-weight:600;">${rate.toFixed(1)} net</span>
@@ -561,7 +753,7 @@ function render() {
     </div>
 
     ${todayEntries.length > 0 && currentShift.active ? `
-      <button onclick="undoLastEntry()" style="width: 100%; font-size: 13px; font-weight: 600; color: var(--warn); background: var(--warn-bg); border: 1px solid rgba(255, 159, 10, 0.3); border-radius: 14px; padding: 12px; margin-bottom: 16px; cursor:pointer;">
+      <button class="ios-btn" onclick="undoLastEntry(event)" style="width: 100%; font-size: 13px; font-weight: 600; color: var(--warn); background: var(--warn-bg); border: 1px solid rgba(255, 159, 10, 0.3); border-radius: 14px; padding: 12px; margin-bottom: 16px; cursor:pointer;">
         Anulează ultima adăugare (${grossOf(todayEntries[todayEntries.length - 1])} lei)
       </button>
     ` : ''}
@@ -574,7 +766,7 @@ function render() {
       </div>
     </div>
 
-    <button onclick="exportCSV()" style="width: 100%; background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); color: var(--ink); border-radius: 16px; padding: 14px; font-size: 13px; font-weight: 600; cursor:pointer;">
+    <button class="ios-btn" onclick="exportCSV(event)" style="width: 100%; background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); color: var(--ink); border-radius: 16px; padding: 14px; font-size: 13px; font-weight: 600; cursor:pointer;">
       📥 Export Excel / CSV
     </button>
   `;
@@ -584,3 +776,4 @@ render();
 </script>
 </body>
 </html>
+
