@@ -2,52 +2,36 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Revizii Gaz - Tracker</title>
-<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Revizii">
 
-<!-- Configurare PWA / APK -->
+<!-- Iconiță pentru iOS (Apple Home Screen) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' fill='%23E2001A'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='65' fill='white'>e.on</text></svg>">
+
+<!-- Favicon Standard Browser -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23E2001A'/><text x='50%' y='58%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='36' fill='white'>e.on</text></svg>">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="E.ON Revizii">
+
+<!-- Configurare PWA pentru Android -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0c447c">
+<meta name="theme-color" content="#E2001A">
 
 <style>
-  * { 
-    box-sizing: border-box; 
-    -webkit-tap-highlight-color: transparent; 
-  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   
-  /* Optimizare APK: Previne selectarea textului și scroll-ul elastic */
-  html, body {
-    margin: 0; padding: 0;
-    background: var(--bg);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    color: var(--ink);
-    -webkit-font-smoothing: antialiased;
-    overscroll-behavior-y: none;
-    touch-action: pan-x pan-y;
-    -webkit-user-select: none;
-    user-select: none;
-    transition: background 0.3s ease, color 0.3s ease;
-  }
-
-  /* Permite selectare doar în căsuțe de text */
-  input, textarea {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-
-  /* Light Mode Variables */
+  /* Light Mode Variables - E.ON Red Theme */
   :root {
-    --accent: #0c447c;
-    --accent-light: #e6f1fb;
-    --accent-mid: #378add;
+    --eon-red: #E2001A;
+    --accent: #E2001A;
+    --accent-light: #fde8ea;
+    --accent-mid: #e53935;
     --ink: #1a1d1f;
     --ink-soft: #5b6066;
     --ink-faint: #8b9096;
-    --bg: #f4f5f6;
+    --bg: #f8f9fa;
     --surface: #ffffff;
     --border: #e2e4e7;
     --good: #0f6e56;
@@ -56,11 +40,12 @@
     --warn-bg: #faeeda;
   }
 
-  /* Dark Mode Variables */
+  /* Dark Mode Variables - E.ON Red Theme */
   [data-theme="dark"] {
-    --accent: #5a9ce6;
-    --accent-light: #1a2b3c;
-    --accent-mid: #378add;
+    --eon-red: #FF3B30;
+    --accent: #FF3B30;
+    --accent-light: #3a1013;
+    --accent-mid: #e53935;
     --ink: #e4e6e8;
     --ink-soft: #a8adb3;
     --ink-faint: #757a80;
@@ -73,8 +58,27 @@
     --warn-bg: #452703;
   }
 
+  html, body {
+    margin: 0; padding: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Text", system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: contain;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
   #root { min-height: 100vh; padding-bottom: 40px; }
   ::-webkit-scrollbar { display: none; }
+
+  /* Stil dedicat pentru Brandul E.ON */
+  .eon-brand-text {
+    color: var(--eon-red);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    font-size: 14px;
+  }
 </style>
 </head>
 <body>
@@ -132,7 +136,7 @@ function dayLabel(key) {
   return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
 }
 
-// Login Component
+// Componenta de Logare
 function Login({ onLogin, theme, toggleTheme }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
@@ -146,7 +150,7 @@ function Login({ onLogin, theme, toggleTheme }) {
     }
   };
 
-  return h('div', { style: { maxWidth: 360, margin: '80px auto', padding: '0 20px' } },
+  return h('div', { style: { maxWidth: 360, margin: '0 auto', paddingTop: 80, paddingLeft: 20, paddingRight: 20 } },
     h('div', { style: { display: 'flex', justifyContent: 'flex-end', marginBottom: 20 } },
       h('button', {
         onClick: toggleTheme,
@@ -154,6 +158,7 @@ function Login({ onLogin, theme, toggleTheme }) {
       }, theme === 'light' ? '🌙' : '☀️')
     ),
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 24, border: '1px solid var(--border)', textAlign: 'center' } },
+      h('div', { className: 'eon-brand-text', style: { marginBottom: 12, fontSize: 16 } }, 'E.ON Asist Complet'),
       h('h2', { style: { marginBottom: 8, marginTop: 0, color: 'var(--ink)' } }, 'Autentificare'),
       h('p', { style: { color: 'var(--ink-faint)', fontSize: 14, marginBottom: 24 } }, 'Introdu codul PIN pentru a continua.'),
       h('form', { onSubmit: handleSubmit, style: { display: 'flex', flexDirection: 'column', gap: 12 } },
@@ -174,7 +179,7 @@ function Login({ onLogin, theme, toggleTheme }) {
   );
 }
 
-// DataTab Component
+// Tabul de Gestiune Date (Export / Import / Reset)
 function DataTab({ data, setData }) {
   const [statusMsg, setStatusMsg] = useState(null);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -218,7 +223,7 @@ function DataTab({ data, setData }) {
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 16 } },
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 20, border: '1px solid var(--border)' } },
       h('h3', { style: { marginTop: 0, marginBottom: 6, fontSize: 16 } }, 'Exportă Datele'),
-      h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Descarcă o copie de siguranță a înregistrărilor tale pe telefon.'),
+      h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Descarcă o copie de siguranță a înregistrărilor tale pe telefon sau calculator.'),
       h('button', {
         onClick: handleExport,
         style: { width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }
@@ -270,23 +275,14 @@ function DataTab({ data, setData }) {
   );
 }
 
-// Main Dashboard
+// Componenta Dashboard Principal (Tab "Pornire")
 function MainDashboard({ data, setData }) {
   const [now, setNow] = useState(new Date());
   const [justAdded, setJustAdded] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customGrossInput, setCustomGrossInput] = useState('');
-
-  // Optimizare Android: Interceptare Hardware Back Button pentru Modal
-  useEffect(() => {
-    if (showCustomModal) {
-      window.history.pushState({ modalOpen: true }, '');
-      const handlePopState = () => setShowCustomModal(false);
-      window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
-    }
-  }, [showCustomModal]);
 
   const tKey = todayKey(now);
   const mKey = monthKey(now);
@@ -335,6 +331,7 @@ function MainDashboard({ data, setData }) {
     e.preventDefault();
     const grossVal = parseFloat(customGrossInput);
     if (isNaN(grossVal) || grossVal <= 0) return;
+
     const netVal = Math.round((grossVal / (1 + VAT_RATE)) * 100) / 100;
     addEntry(netVal);
     setCustomGrossInput('');
@@ -371,13 +368,14 @@ function MainDashboard({ data, setData }) {
   }, [monthDays, data]);
 
   const avgPerWorkday = workdaysSoFar > 0 ? monthSum / workdaysSoFar : 0;
+
   const todayOverage = Math.max(0, todaySum - DAILY_TARGET);
   const todayBonus = todayOverage * BONUS_RATE;
   const monthOverage = Math.max(0, monthSum - monthlyTarget);
   const monthBonus = monthOverage * BONUS_RATE;
 
   return h('div', null,
-    // Today Card
+    // Today card
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)', marginBottom: 14 } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
         h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Azi'),
@@ -388,18 +386,18 @@ function MainDashboard({ data, setData }) {
         h('span', { style: { fontSize: 18, color: 'var(--ink-faint)', fontWeight: 500 } }, 'lei')
       ),
       h('div', { style: { height: 10, background: 'var(--bg)', borderRadius: 6, overflow: 'hidden', marginBottom: 10 } },
-        h('div', { style: { height: '100%', width: todayProgress + '%', background: todayProgress >= 100 ? 'var(--good)' : 'var(--accent-mid)', borderRadius: 6, transition: 'width 0.4s ease' } })
+        h('div', { style: { height: '100%', width: todayProgress + '%', background: todayProgress >= 100 ? 'var(--good)' : 'var(--accent)', borderRadius: 6, transition: 'width 0.4s ease' } })
       ),
       h('div', { style: { fontSize: 14, color: todayProgress >= 100 ? 'var(--good)' : 'var(--ink-soft)', fontWeight: 500 } },
         todayProgress >= 100 ? `Tinta atinsa. Peste target cu ${fmtRON(todayOverage)}.` : `Mai ai nevoie de ${fmtRON(remainingToday)}.`
       ),
       todayOverage > 0 && h('div', { style: { marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--accent-light)', borderRadius: 10, padding: '10px 12px' } },
-        h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 500 } }, 'Bonus 31% azi'),
+        h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 600 } }, 'Bonus 31% azi'),
         h('span', { style: { fontSize: 16, fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' } }, fmtRON(todayBonus))
       )
     ),
 
-    // Rate Buttons
+    // Rate buttons (Standard)
     h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 } },
       RATES.map((rate, i) =>
         h('button', {
@@ -420,7 +418,7 @@ function MainDashboard({ data, setData }) {
       )
     ),
 
-    // Custom Rate Button
+    // Buton Sumă Personalizată
     h('button', {
       onClick: () => setShowCustomModal(true),
       style: {
@@ -432,12 +430,13 @@ function MainDashboard({ data, setData }) {
 
     h('div', { style: { fontSize: 11, color: 'var(--ink-faint)', textAlign: 'center', marginBottom: 14 } }, 'Toate calculele de mai sus (tinta, luna, bonus) sunt fara TVA'),
 
-    // Undo Actions
+    // Undo last entry
     todayEntries.length > 0 && h('button', {
       onClick: undoLastEntry,
       style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--warn)', background: 'var(--warn-bg)', border: 'none', borderRadius: 12, padding: '10px 12px', fontFamily: 'inherit', cursor: 'pointer', marginBottom: 12 }
     }, `Anuleaza ultima verificare adaugata (${grossOf(todayEntries[todayEntries.length - 1])} lei)`),
 
+    // Per-rate undo (Standard + Custom)
     todayEntries.length > 0 && h('div', { style: { display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' } },
       RATES.filter(r => todayCounts[r] > 0).map(rate =>
         h('button', {
@@ -455,7 +454,7 @@ function MainDashboard({ data, setData }) {
       )
     ),
 
-    // Month Card
+    // Month card
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)', marginBottom: 14 } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
         h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Luna aceasta'),
@@ -473,15 +472,15 @@ function MainDashboard({ data, setData }) {
       ),
       h('div', { style: { marginTop: 12, fontSize: 13, color: 'var(--ink-faint)' } }, `Medie ${fmtRON(avgPerWorkday)} / zi lucratoare`),
       monthOverage > 0 && h('div', { style: { marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--accent-light)', borderRadius: 10, padding: '10px 12px' } },
-        h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 500 } }, 'Bonus 31% luna asta'),
+        h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 600 } }, 'Bonus 31% luna asta'),
         h('span', { style: { fontSize: 16, fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' } }, fmtRON(monthBonus))
       )
     ),
 
-    // History Toggle
+    // History toggle
     h('button', {
       onClick: () => setShowHistory(s => !s),
-      style: { width: '100%', background: 'transparent', border: 'none', color: 'var(--accent)', fontSize: 14, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', padding: '10px 0', textAlign: 'center' }
+      style: { width: '100%', background: 'transparent', border: 'none', color: 'var(--accent)', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', padding: '10px 0', textAlign: 'center' }
     }, showHistory ? 'Ascunde istoric' : 'Vezi istoric zilnic'),
 
     showHistory && h('div', { style: { marginTop: 4 } },
@@ -516,7 +515,7 @@ function MainDashboard({ data, setData }) {
     },
       h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360, border: '1px solid var(--border)' } },
         h('h3', { style: { marginTop: 0, marginBottom: 8, fontSize: 18 } }, 'Sumă Personalizată'),
-        h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Introdu suma totală încasată de la client (cu TVA 21%).'),
+        h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Introdu suma totală încasată de la client (cu TVA 21%). Aplicația va calcula automat valoarea fără TVA.'),
         h('form', { onSubmit: handleAddCustom, style: { display: 'flex', flexDirection: 'column', gap: 12 } },
           h('input', {
             type: 'number',
@@ -547,7 +546,7 @@ function MainDashboard({ data, setData }) {
   );
 }
 
-// Layout Principal
+// Layout Principal cu Tab-uri
 function AppLayout({ theme, toggleTheme }) {
   const [activeTab, setActiveTab] = useState('main');
   const [data, setData] = useState(loadData);
@@ -557,10 +556,11 @@ function AppLayout({ theme, toggleTheme }) {
   const tKey = todayKey();
 
   return h('div', { style: { maxWidth: 480, margin: '0 auto', padding: '20px 16px' } },
+    // Header
     h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 } },
       h('div', null,
-        h('div', { style: { fontSize: 13, color: 'var(--ink-faint)', fontWeight: 500, marginBottom: 2 } }, 'E.ON Asist Complet'),
-        h('div', { style: { fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em' } }, 'Revizii si verificari gaz'),
+        h('div', { className: 'eon-brand-text' }, 'E.ON Asist Complet'),
+        h('div', { style: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', marginTop: 2 } }, 'Revizii si verificari gaz'),
         h('div', { style: { fontSize: 14, color: 'var(--ink-soft)', marginTop: 2 } }, dayLabel(tKey))
       ),
       h('button', {
@@ -569,6 +569,7 @@ function AppLayout({ theme, toggleTheme }) {
       }, theme === 'light' ? '🌙' : '☀️')
     ),
 
+    // Selector Tab-uri
     h('div', { style: { display: 'flex', background: 'var(--surface)', borderRadius: 12, padding: 4, border: '1px solid var(--border)', marginBottom: 20 } },
       h('button', {
         onClick: () => setActiveTab('main'),
@@ -590,19 +591,20 @@ function AppLayout({ theme, toggleTheme }) {
       }, 'Date')
     ),
 
+    // Conținut Tab activ
     activeTab === 'main'
       ? h(MainDashboard, { data, setData })
       : h(DataTab, { data, setData })
   );
 }
 
-// App Root
+// Main App Root cu Logare
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('revizii_theme') || 'light');
 
   useEffect(() => {
-    document.body.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('revizii_theme', theme);
   }, [theme]);
 
@@ -618,13 +620,13 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>
 
-<!-- Service Worker Registration -->
+<!-- Service Worker PWA -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('SW Registered'))
-        .catch(err => console.error('SW Error:', err));
+        .then(() => console.log('SW registered'))
+        .catch(err => console.error('SW err:', err));
     });
   }
 </script>
