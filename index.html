@@ -22,46 +22,61 @@
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   
-  /* Light Mode Variables - E.ON Red Theme */
+  /* Light Mode Variables - Liquid Glass E.ON Theme */
   :root {
     --eon-red: #E2001A;
     --accent: #E2001A;
-    --accent-light: #fde8ea;
+    --accent-light: rgba(226, 0, 26, 0.1);
     --accent-mid: #e53935;
     --ink: #1a1d1f;
     --ink-soft: #5b6066;
     --ink-faint: #8b9096;
-    --bg: #f8f9fa;
-    --surface: #ffffff;
-    --border: #e2e4e7;
+    
+    /* Dynamic Liquid Glass Theme (Light) */
+    --bg: linear-gradient(135deg, #f0f2f5 0%, #e4e8ed 100%);
+    --surface: rgba(255, 255, 255, 0.65);
+    --surface-solid: #ffffff;
+    --border: rgba(255, 255, 255, 0.8);
+    --border-dark: rgba(226, 0, 26, 0.15);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    --glass-blur: blur(16px);
+
     --good: #0f6e56;
-    --good-bg: #e1f5ee;
+    --good-bg: rgba(15, 110, 86, 0.12);
     --warn: #854f0b;
-    --warn-bg: #faeeda;
+    --warn-bg: rgba(250, 238, 218, 0.6);
   }
 
-  /* Dark Mode Variables - E.ON Red Theme */
+  /* Dark Mode Variables - Liquid Glass E.ON Theme */
   [data-theme="dark"] {
     --eon-red: #FF3B30;
     --accent: #FF3B30;
-    --accent-light: #3a1013;
+    --accent-light: rgba(255, 59, 48, 0.15);
     --accent-mid: #e53935;
-    --ink: #e4e6e8;
+    --ink: #f0f2f5;
     --ink-soft: #a8adb3;
     --ink-faint: #757a80;
-    --bg: #121416;
-    --surface: #1e2124;
-    --border: #2d3136;
+
+    /* Dynamic Liquid Glass Theme (Dark) */
+    --bg: linear-gradient(135deg, #0d0f11 0%, #171a1e 100%);
+    --surface: rgba(30, 33, 36, 0.65);
+    --surface-solid: #1e2124;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-dark: rgba(255, 59, 48, 0.25);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --glass-blur: blur(16px);
+
     --good: #34d399;
-    --good-bg: #064e3b;
+    --good-bg: rgba(6, 78, 59, 0.4);
     --warn: #fbbf24;
-    --warn-bg: #452703;
+    --warn-bg: rgba(69, 39, 3, 0.4);
   }
 
   html, body {
     margin: 0; padding: 0;
     min-height: 100vh;
     background: var(--bg);
+    background-attachment: fixed;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Text", system-ui, sans-serif;
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
@@ -70,6 +85,29 @@
   }
   #root { min-height: 100vh; padding-bottom: 40px; }
   ::-webkit-scrollbar { display: none; }
+
+  /* Clase utilitare pentru Liquid Glass */
+  .glass-card {
+    background: var(--surface);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 20px;
+  }
+
+  .glass-button {
+    background: var(--surface);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.03);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-button:active {
+    transform: scale(0.97);
+  }
 
   /* Stil dedicat pentru Brandul E.ON */
   .eon-brand-text {
@@ -143,12 +181,12 @@ function fmtRON(n) {
 }
 function dayLabel(key) {
   const d = new Date(key + 'T00:00:00');
-  const days = ['Duminica','Luni','Marti','Miercuri','Joi','Vineri','Sambata'];
+  const days = ['Duminică','Luni','Marți','Miercuri','Joi','Vineri','Sâmbătă'];
   const months = ['ian','feb','mar','apr','mai','iun','iul','aug','sep','oct','nov','dec'];
   return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
 }
 
-// Componenta de Autentificare și Înregistrare (Log In / Sign Up)
+// Componenta de Autentificare și Înregistrare (Liquid Glass)
 function Auth({ onLoginSuccess, theme, toggleTheme }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [username, setUsername] = useState('');
@@ -171,7 +209,6 @@ function Auth({ onLoginSuccess, theme, toggleTheme }) {
     const users = loadUsers();
 
     if (isSignUp) {
-      // Logica de Sign Up
       if (password !== confirmPassword) {
         setError('Parolele nu se potrivesc.');
         return;
@@ -189,10 +226,8 @@ function Auth({ onLoginSuccess, theme, toggleTheme }) {
       setPassword('');
       setConfirmPassword('');
     } else {
-      // Logica de Log In
       const user = users.find(u => u.username.toLowerCase() === uName.toLowerCase() && u.password === password);
       
-      // Dacă nu există utilizatori deloc, permite logarea default cu admin/1234
       if (!user && users.length === 0 && uName.toLowerCase() === 'admin' && password === '1234') {
         onLoginSuccess(uName);
         return;
@@ -210,10 +245,11 @@ function Auth({ onLoginSuccess, theme, toggleTheme }) {
     h('div', { style: { display: 'flex', justifyContent: 'flex-end', marginBottom: 20 } },
       h('button', {
         onClick: toggleTheme,
-        style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
+        className: 'glass-button',
+        style: { borderRadius: '50%', width: 44, height: 44, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
       }, theme === 'light' ? '🌙' : '☀️')
     ),
-    h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 24, border: '1px solid var(--border)', textAlign: 'center' } },
+    h('div', { className: 'glass-card', style: { padding: 28, textAlign: 'center' } },
       h('div', { className: 'eon-brand-text', style: { marginBottom: 8, fontSize: 16 } }, 'E.ON Asist Complet'),
       h('h2', { style: { marginBottom: 6, marginTop: 0, color: 'var(--ink)' } }, isSignUp ? 'Creare Cont' : 'Autentificare'),
       h('p', { style: { color: 'var(--ink-faint)', fontSize: 13, marginBottom: 20 } }, 
@@ -226,21 +262,21 @@ function Auth({ onLoginSuccess, theme, toggleTheme }) {
           value: username,
           onChange: (e) => setUsername(e.target.value),
           placeholder: 'Utilizator',
-          style: { padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 15 }
+          style: { padding: '14px', borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.2)', color: 'var(--ink)', fontSize: 15, outline: 'none' }
         }),
         h('input', {
           type: 'password',
           value: password,
           onChange: (e) => setPassword(e.target.value),
           placeholder: 'Parolă',
-          style: { padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 15 }
+          style: { padding: '14px', borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.2)', color: 'var(--ink)', fontSize: 15, outline: 'none' }
         }),
         isSignUp && h('input', {
           type: 'password',
           value: confirmPassword,
           onChange: (e) => setConfirmPassword(e.target.value),
           placeholder: 'Confirmă Parola',
-          style: { padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 15 }
+          style: { padding: '14px', borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.2)', color: 'var(--ink)', fontSize: 15, outline: 'none' }
         }),
         
         error && h('div', { style: { color: 'var(--warn)', fontSize: 13 } }, error),
@@ -248,7 +284,7 @@ function Auth({ onLoginSuccess, theme, toggleTheme }) {
         
         h('button', {
           type: 'submit',
-          style: { padding: '14px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 6 }
+          style: { padding: '14px', borderRadius: 12, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 6, boxShadow: '0 4px 14px rgba(226, 0, 26, 0.35)' }
         }, isSignUp ? 'Înregistrează-te' : 'Intră în Cont'),
 
         h('button', {
@@ -261,7 +297,7 @@ function Auth({ onLoginSuccess, theme, toggleTheme }) {
   );
 }
 
-// Tabul de Gestiune Date (Export / Import / Reset)
+// Tabul de Gestiune Date
 function DataTab({ data, setData }) {
   const [statusMsg, setStatusMsg] = useState(null);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -303,20 +339,21 @@ function DataTab({ data, setData }) {
   };
 
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 16 } },
-    h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 20, border: '1px solid var(--border)' } },
+    h('div', { className: 'glass-card', style: { padding: 20 } },
       h('h3', { style: { marginTop: 0, marginBottom: 6, fontSize: 16 } }, 'Exportă Datele'),
       h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Descarcă o copie de siguranță a înregistrărilor tale pe telefon sau calculator.'),
       h('button', {
         onClick: handleExport,
-        style: { width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }
+        style: { width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 12px rgba(226,0,26,0.3)' }
       }, 'Descarcă Backup (.json)')
     ),
 
-    h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 20, border: '1px solid var(--border)' } },
+    h('div', { className: 'glass-card', style: { padding: 20 } },
       h('h3', { style: { marginTop: 0, marginBottom: 6, fontSize: 16 } }, 'Importă Datele'),
       h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Încarcă un fișier de backup (.json) salvat anterior.'),
       h('label', {
-        style: { display: 'block', width: '100%', padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontWeight: 600, fontSize: 14, textAlign: 'center', cursor: 'pointer' }
+        className: 'glass-button',
+        style: { display: 'block', width: '100%', padding: '12px', borderRadius: 12, color: 'var(--ink)', fontWeight: 600, fontSize: 14, textAlign: 'center', cursor: 'pointer' }
       },
         'Alege Fișier Backup',
         h('input', {
@@ -330,7 +367,7 @@ function DataTab({ data, setData }) {
 
     statusMsg && h('div', {
       style: {
-        padding: '12px', borderRadius: 10, fontSize: 13, fontWeight: 500, textAlign: 'center',
+        padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 500, textAlign: 'center',
         background: statusMsg.type === 'success' ? 'var(--good-bg)' : 'var(--warn-bg)',
         color: statusMsg.type === 'success' ? 'var(--good)' : 'var(--warn)'
       }
@@ -342,15 +379,15 @@ function DataTab({ data, setData }) {
             onClick: () => setConfirmReset(true),
             style: { background: 'none', border: 'none', color: 'var(--warn)', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }
           }, 'Șterge toate datele din aplicație')
-        : h('div', { style: { display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'center', background: 'var(--surface)', padding: 16, borderRadius: 12, border: '1px solid var(--border)' } },
+        : h('div', { className: 'glass-card', style: { display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'center', padding: 16 } },
             h('span', { style: { fontSize: 13, color: 'var(--warn)', fontWeight: 500 } }, 'Sigur ștergi tot?'),
             h('button', {
               onClick: () => { setData({ days: {} }); setConfirmReset(false); setStatusMsg({ type: 'success', text: 'Datele au fost șterse.' }); },
-              style: { background: 'var(--warn)', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }
+              style: { background: 'var(--warn)', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }
             }, 'Da, șterge'),
             h('button', {
               onClick: () => setConfirmReset(false),
-              style: { background: 'transparent', border: '1px solid var(--border)', color: 'var(--ink)', padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }
+              style: { background: 'transparent', border: '1px solid var(--border)', color: 'var(--ink)', padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer' }
             }, 'Anulează')
           )
     )
@@ -457,23 +494,23 @@ function MainDashboard({ data, setData }) {
   const monthBonus = monthOverage * BONUS_RATE;
 
   return h('div', null,
-    // Today card
-    h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)', marginBottom: 14 } },
+    // Today card (Liquid Glass)
+    h('div', { className: 'glass-card', style: { padding: '20px', marginBottom: 14 } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
-        h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Azi'),
+        h('span', { style: { fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Azi'),
         h('span', { style: { fontSize: 13, color: 'var(--ink-faint)' } }, `țintă ${fmtRON(DAILY_TARGET)}`)
       ),
       h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 } },
-        h('span', { style: { fontSize: 40, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' } }, fmtRON(todaySum).replace(' lei','')),
+        h('span', { style: { fontSize: 40, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' } }, fmtRON(todaySum).replace(' lei','')),
         h('span', { style: { fontSize: 18, color: 'var(--ink-faint)', fontWeight: 500 } }, 'lei')
       ),
-      h('div', { style: { height: 10, background: 'var(--bg)', borderRadius: 6, overflow: 'hidden', marginBottom: 10 } },
+      h('div', { style: { height: 10, background: 'rgba(0,0,0,0.06)', borderRadius: 6, overflow: 'hidden', marginBottom: 10 } },
         h('div', { style: { height: '100%', width: todayProgress + '%', background: todayProgress >= 100 ? 'var(--good)' : 'var(--accent)', borderRadius: 6, transition: 'width 0.4s ease' } })
       ),
       h('div', { style: { fontSize: 14, color: todayProgress >= 100 ? 'var(--good)' : 'var(--ink-soft)', fontWeight: 500 } },
         todayProgress >= 100 ? `Țintă atinsă. Peste target cu ${fmtRON(todayOverage)}.` : `Mai ai nevoie de ${fmtRON(remainingToday)}.`
       ),
-      todayOverage > 0 && h('div', { style: { marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--accent-light)', borderRadius: 10, padding: '10px 12px' } },
+      todayOverage > 0 && h('div', { style: { marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--accent-light)', borderRadius: 12, padding: '10px 12px', border: '1px solid var(--border-dark)' } },
         h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 600 } }, 'Bonus 31% azi'),
         h('span', { style: { fontSize: 16, fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' } }, fmtRON(todayBonus))
       )
@@ -485,28 +522,30 @@ function MainDashboard({ data, setData }) {
         h('button', {
           key: rate,
           onClick: () => addEntry(rate),
+          className: 'glass-button',
           style: {
             background: justAdded === rate ? 'var(--accent)' : 'var(--surface)',
             color: justAdded === rate ? '#fff' : 'var(--ink)',
-            border: '1px solid ' + (justAdded === rate ? 'var(--accent)' : 'var(--border)'),
-            borderRadius: 14, padding: '16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.15s ease', transform: justAdded === rate ? 'scale(0.96)' : 'scale(1)'
+            borderColor: justAdded === rate ? 'var(--accent)' : 'var(--border)',
+            borderRadius: 16, padding: '16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, fontFamily: 'inherit', cursor: 'pointer'
           }
         },
-          h('span', { style: { fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' } }, GROSS_RATES[i]),
-          h('span', { style: { fontSize: 11, opacity: 0.75, fontWeight: 500 } }, 'lei cu TVA'),
+          h('span', { style: { fontSize: 22, fontWeight: 800, fontVariantNumeric: 'tabular-nums' } }, GROSS_RATES[i]),
+          h('span', { style: { fontSize: 11, opacity: 0.8, fontWeight: 500 } }, 'lei cu TVA'),
           h('span', { style: { fontSize: 11, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: justAdded === rate ? 'rgba(255,255,255,0.85)' : 'var(--ink-faint)' } }, `fără TVA: ${rate.toFixed(2)}`),
           todayCounts[rate] > 0 && h('span', { style: { marginTop: 2, fontSize: 12, fontWeight: 600, background: justAdded === rate ? 'rgba(255,255,255,0.25)' : 'var(--accent-light)', color: justAdded === rate ? '#fff' : 'var(--accent)', borderRadius: 20, padding: '2px 8px' } }, `x${todayCounts[rate]}`)
         )
       )
     ),
 
-    // Buton Sumă Personalizată
+    // Buton Sumă Personalizată (Glass)
     h('button', {
       onClick: () => setShowCustomModal(true),
+      className: 'glass-button',
       style: {
-        width: '100%', background: 'var(--surface)', border: '1px dashed var(--accent)', color: 'var(--accent)',
-        borderRadius: 12, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 10,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+        width: '100%', color: 'var(--accent)',
+        borderRadius: 14, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderStyle: 'dashed'
       }
     }, '➕ Adaugă sumă personalizată (cu TVA)'),
 
@@ -524,36 +563,38 @@ function MainDashboard({ data, setData }) {
         h('button', {
           key: 'undo-' + rate,
           onClick: () => removeLastEntry(rate),
-          style: { fontSize: 12, color: 'var(--ink-faint)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 20, padding: '6px 12px', fontFamily: 'inherit', cursor: 'pointer' }
+          className: 'glass-button',
+          style: { fontSize: 12, color: 'var(--ink-faint)', borderRadius: 20, padding: '6px 12px', fontFamily: 'inherit', cursor: 'pointer' }
         }, `- o verificare de ${grossOf(rate)}`)
       ),
       customEntries.map((netRate, idx) =>
         h('button', {
           key: 'undo-custom-' + idx,
           onClick: () => removeLastEntry(netRate),
-          style: { fontSize: 12, color: 'var(--warn)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 20, padding: '6px 12px', fontFamily: 'inherit', cursor: 'pointer' }
+          className: 'glass-button',
+          style: { fontSize: 12, color: 'var(--warn)', borderRadius: 20, padding: '6px 12px', fontFamily: 'inherit', cursor: 'pointer' }
         }, `- suma ${grossOf(netRate)} lei`)
       )
     ),
 
-    // Month card
-    h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)', marginBottom: 14 } },
+    // Month card (Liquid Glass)
+    h('div', { className: 'glass-card', style: { padding: '20px', marginBottom: 14 } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
-        h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Luna aceasta'),
+        h('span', { style: { fontSize: 13, fontWeight: 600, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Luna aceasta'),
         h('span', { style: { fontSize: 13, color: 'var(--ink-faint)' } }, `${workdaysSoFar}/${totalWorkdaysInMonth} zile lucrătoare`)
       ),
       h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 } },
-        h('span', { style: { fontSize: 28, fontWeight: 700, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' } }, fmtRON(monthSum)),
+        h('span', { style: { fontSize: 28, fontWeight: 800, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' } }, fmtRON(monthSum)),
         h('span', { style: { fontSize: 15, color: 'var(--ink-faint)' } }, `/ ${fmtRON(monthlyTarget)}`)
       ),
-      h('div', { style: { height: 10, background: 'var(--bg)', borderRadius: 6, overflow: 'hidden', marginTop: 10, marginBottom: 12 } },
+      h('div', { style: { height: 10, background: 'rgba(0,0,0,0.06)', borderRadius: 6, overflow: 'hidden', marginTop: 10, marginBottom: 12 } },
         h('div', { style: { height: '100%', width: monthProgress + '%', background: 'var(--accent)', borderRadius: 6, transition: 'width 0.4s ease' } })
       ),
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: diffVsExpected >= 0 ? 'var(--good)' : 'var(--warn)', background: diffVsExpected >= 0 ? 'var(--good-bg)' : 'var(--warn-bg)', borderRadius: 10, padding: '8px 12px' } },
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: diffVsExpected >= 0 ? 'var(--good)' : 'var(--warn)', background: diffVsExpected >= 0 ? 'var(--good-bg)' : 'var(--warn-bg)', borderRadius: 12, padding: '8px 12px' } },
         diffVsExpected >= 0 ? `Ești în avans cu ${fmtRON(diffVsExpected)} față de ritmul necesar.` : `Ești în urmă cu ${fmtRON(Math.abs(diffVsExpected))} față de ritmul necesar.`
       ),
       h('div', { style: { marginTop: 12, fontSize: 13, color: 'var(--ink-faint)' } }, `Medie ${fmtRON(avgPerWorkday)} / zi lucrătoare`),
-      monthOverage > 0 && h('div', { style: { marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--accent-light)', borderRadius: 10, padding: '10px 12px' } },
+      monthOverage > 0 && h('div', { style: { marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--accent-light)', borderRadius: 12, padding: '10px 12px', border: '1px solid var(--border-dark)' } },
         h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 600 } }, 'Bonus 31% luna asta'),
         h('span', { style: { fontSize: 16, fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' } }, fmtRON(monthBonus))
       )
@@ -575,7 +616,8 @@ function MainDashboard({ data, setData }) {
             const customs = entries.filter(e => !RATES.includes(e));
             return h('div', {
               key,
-              style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+              className: 'glass-card',
+              style: { padding: '12px 16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
             },
               h('div', null,
                 h('div', { style: { fontSize: 14, fontWeight: 500 } }, dayLabel(key)),
@@ -591,11 +633,11 @@ function MainDashboard({ data, setData }) {
           })
     ),
 
-    // Modal Sumă Personalizată
+    // Modal Sumă Personalizată (Liquid Glass)
     showCustomModal && h('div', {
-      style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }
+      style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }
     },
-      h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360, border: '1px solid var(--border)' } },
+      h('div', { className: 'glass-card', style: { padding: 24, width: '100%', maxWidth: 360, background: 'var(--surface-solid)' } },
         h('h3', { style: { marginTop: 0, marginBottom: 8, fontSize: 18 } }, 'Sumă Personalizată'),
         h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Introdu suma totală încasată de la client (cu TVA 21%). Aplicația va calcula automat valoarea fără TVA.'),
         h('form', { onSubmit: handleAddCustom, style: { display: 'flex', flexDirection: 'column', gap: 12 } },
@@ -615,7 +657,8 @@ function MainDashboard({ data, setData }) {
             h('button', {
               type: 'button',
               onClick: () => setShowCustomModal(false),
-              style: { flex: 1, padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--ink)', cursor: 'pointer' }
+              className: 'glass-button',
+              style: { flex: 1, padding: '12px', borderRadius: 10, color: 'var(--ink)', cursor: 'pointer' }
             }, 'Renunță'),
             h('button', {
               type: 'submit',
@@ -648,34 +691,38 @@ function AppLayout({ user, onLogout, theme, toggleTheme }) {
       h('div', { style: { display: 'flex', gap: 8 } },
         h('button', {
           onClick: toggleTheme,
-          style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
+          className: 'glass-button',
+          style: { borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
         }, theme === 'light' ? '🌙' : '☀️'),
         h('button', {
           onClick: onLogout,
           title: 'Ieșire din cont',
-          style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--warn)' }
+          className: 'glass-button',
+          style: { borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--warn)' }
         }, '🚪')
       )
     ),
 
-    // Selector Tab-uri
-    h('div', { style: { display: 'flex', background: 'var(--surface)', borderRadius: 12, padding: 4, border: '1px solid var(--border)', marginBottom: 20 } },
+    // Selector Tab-uri (Liquid Glass Selector)
+    h('div', { className: 'glass-card', style: { display: 'flex', padding: 4, marginBottom: 20 } },
       h('button', {
         onClick: () => setActiveTab('main'),
         style: {
-          flex: 1, padding: '10px', borderRadius: 8, border: 'none',
+          flex: 1, padding: '10px', borderRadius: 14, border: 'none',
           background: activeTab === 'main' ? 'var(--accent)' : 'transparent',
           color: activeTab === 'main' ? '#fff' : 'var(--ink-soft)',
-          fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s ease'
+          fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s ease',
+          boxShadow: activeTab === 'main' ? '0 4px 12px rgba(226,0,26,0.3)' : 'none'
         }
       }, 'Pornire'),
       h('button', {
         onClick: () => setActiveTab('data'),
         style: {
-          flex: 1, padding: '10px', borderRadius: 8, border: 'none',
+          flex: 1, padding: '10px', borderRadius: 14, border: 'none',
           background: activeTab === 'data' ? 'var(--accent)' : 'transparent',
           color: activeTab === 'data' ? '#fff' : 'var(--ink-soft)',
-          fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s ease'
+          fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s ease',
+          boxShadow: activeTab === 'data' ? '0 4px 12px rgba(226,0,26,0.3)' : 'none'
         }
       }, 'Date')
     ),
