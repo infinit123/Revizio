@@ -1,0 +1,15 @@
+{
+  "name": "Tracker Revizii Gaz",
+  "short_name": "Revizii",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f5f6",
+  "theme_color": "#0c447c",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1048/1048953.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
