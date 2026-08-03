@@ -117,6 +117,98 @@
     text-transform: uppercase;
     font-size: 14px;
   }
+
+  /* ===== Sidebar Layout ===== */
+  .app-shell {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--surface);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+    box-sizing: border-box;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+
+  .sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    margin-bottom: 6px;
+  }
+  .sidebar-nav-item.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(226,0,26,0.3);
+  }
+  .sidebar-nav-item:not(.active):hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+  }
+
+  .sidebar-toggle-btn {
+    display: none;
+  }
+
+  .app-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Mobile: off-canvas sidebar */
+  @media (max-width: 860px) {
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      transform: translateX(-100%);
+      box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .sidebar-overlay.open {
+      display: block;
+    }
+    .sidebar-toggle-btn {
+      display: flex;
+    }
+  }
 </style>
 </head>
 <body>
@@ -671,66 +763,113 @@ function MainDashboard({ data, setData }) {
   );
 }
 
-// Layout Principal cu Tab-uri
+// Sidebar din stânga
+function Sidebar({ user, onLogout, theme, toggleTheme, activeTab, setActiveTab, data, isOpen, onClose }) {
+  const tKey = todayKey();
+  const mKey = monthKey();
+  const todaySum = (data.days[tKey] || []).reduce((a, b) => a + b, 0);
+  const monthDays = Object.keys(data.days).filter(k => k.startsWith(mKey));
+  const monthSum = monthDays.reduce((sum, k) => sum + (data.days[k] || []).reduce((a, b) => a + b, 0), 0);
+
+  const navItems = [
+    { id: 'main', icon: '🏠', label: 'Pornire' },
+    { id: 'data', icon: '💾', label: 'Date' }
+  ];
+
+  return h(React.Fragment, null,
+    isOpen && h('div', { className: 'sidebar-overlay open', onClick: onClose }),
+    h('div', { className: 'sidebar' + (isOpen ? ' open' : '') },
+      // Brand
+      h('div', { style: { marginBottom: 24 } },
+        h('div', { className: 'eon-brand-text' }, 'E.ON Asist Complet'),
+        h('div', { style: { fontSize: 18, fontWeight: 700, letterSpacing: '-0.01em', marginTop: 4 } }, 'Revizii și verificări gaz')
+      ),
+
+      // Navigare
+      h('div', { style: { marginBottom: 20 } },
+        navItems.map(item =>
+          h('button', {
+            key: item.id,
+            className: 'sidebar-nav-item' + (activeTab === item.id ? ' active' : ''),
+            onClick: () => { setActiveTab(item.id); onClose(); }
+          },
+            h('span', { style: { fontSize: 16 } }, item.icon),
+            item.label
+          )
+        )
+      ),
+
+      // Rezumat rapid
+      h('div', { className: 'glass-card', style: { padding: 14, marginBottom: 20 } },
+        h('div', { style: { fontSize: 11, fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: 8 } }, 'Rezumat rapid'),
+        h('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: 6 } },
+          h('span', { style: { fontSize: 13, color: 'var(--ink-soft)' } }, 'Azi'),
+          h('span', { style: { fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' } }, fmtRON(todaySum))
+        ),
+        h('div', { style: { display: 'flex', justifyContent: 'space-between' } },
+          h('span', { style: { fontSize: 13, color: 'var(--ink-soft)' } }, 'Luna aceasta'),
+          h('span', { style: { fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' } }, fmtRON(monthSum))
+        )
+      ),
+
+      // Spacer
+      h('div', { style: { flex: 1 } }),
+
+      // User + controale jos
+      h('div', { style: { borderTop: '1px solid var(--border)', paddingTop: 14 } },
+        h('div', { style: { fontSize: 13, color: 'var(--ink-soft)', marginBottom: 10 } }, `Salut, ${user}! • ${dayLabel(tKey)}`),
+        h('div', { style: { display: 'flex', gap: 8 } },
+          h('button', {
+            onClick: toggleTheme,
+            className: 'glass-button',
+            style: { flex: 1, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--ink)' }
+          }, theme === 'light' ? '🌙' : '☀️'),
+          h('button', {
+            onClick: onLogout,
+            title: 'Ieșire din cont',
+            className: 'glass-button',
+            style: { flex: 1, borderRadius: 12, padding: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--warn)' }
+          }, '🚪')
+        )
+      )
+    )
+  );
+}
+
+// Layout Principal cu Sidebar + Tab-uri
 function AppLayout({ user, onLogout, theme, toggleTheme }) {
   const [activeTab, setActiveTab] = useState('main');
   const [data, setData] = useState(loadData);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => { saveData(data); }, [data]);
 
-  const tKey = todayKey();
+  return h('div', { className: 'app-shell' },
+    h(Sidebar, {
+      user, onLogout, theme, toggleTheme, activeTab, setActiveTab, data,
+      isOpen: sidebarOpen,
+      onClose: () => setSidebarOpen(false)
+    }),
+    h('div', { className: 'app-main' },
+      h('div', { style: { maxWidth: 480, margin: '0 auto', padding: '20px 16px' } },
+        // Mobile top bar with hamburger
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 } },
+          h('button', {
+            className: 'glass-button sidebar-toggle-btn',
+            onClick: () => setSidebarOpen(true),
+            style: { borderRadius: 12, width: 40, height: 40, cursor: 'pointer', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
+          }, '☰'),
+          h('div', { style: { fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em' } },
+            activeTab === 'main' ? 'Pornire' : 'Date'
+          )
+        ),
 
-  return h('div', { style: { maxWidth: 480, margin: '0 auto', padding: '20px 16px' } },
-    // Header
-    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 } },
-      h('div', null,
-        h('div', { className: 'eon-brand-text' }, 'E.ON Asist Complet'),
-        h('div', { style: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', marginTop: 2 } }, 'Revizii și verificări gaz'),
-        h('div', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 2 } }, `Salut, ${user}! • ${dayLabel(tKey)}`)
-      ),
-      h('div', { style: { display: 'flex', gap: 8 } },
-        h('button', {
-          onClick: toggleTheme,
-          className: 'glass-button',
-          style: { borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
-        }, theme === 'light' ? '🌙' : '☀️'),
-        h('button', {
-          onClick: onLogout,
-          title: 'Ieșire din cont',
-          className: 'glass-button',
-          style: { borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--warn)' }
-        }, '🚪')
+        // Conținut Tab activ
+        activeTab === 'main'
+          ? h(MainDashboard, { data, setData })
+          : h(DataTab, { data, setData })
       )
-    ),
-
-    // Selector Tab-uri (Liquid Glass Selector)
-    h('div', { className: 'glass-card', style: { display: 'flex', padding: 4, marginBottom: 20 } },
-      h('button', {
-        onClick: () => setActiveTab('main'),
-        style: {
-          flex: 1, padding: '10px', borderRadius: 14, border: 'none',
-          background: activeTab === 'main' ? 'var(--accent)' : 'transparent',
-          color: activeTab === 'main' ? '#fff' : 'var(--ink-soft)',
-          fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s ease',
-          boxShadow: activeTab === 'main' ? '0 4px 12px rgba(226,0,26,0.3)' : 'none'
-        }
-      }, 'Pornire'),
-      h('button', {
-        onClick: () => setActiveTab('data'),
-        style: {
-          flex: 1, padding: '10px', borderRadius: 14, border: 'none',
-          background: activeTab === 'data' ? 'var(--accent)' : 'transparent',
-          color: activeTab === 'data' ? '#fff' : 'var(--ink-soft)',
-          fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s ease',
-          boxShadow: activeTab === 'data' ? '0 4px 12px rgba(226,0,26,0.3)' : 'none'
-        }
-      }, 'Date')
-    ),
-
-    // Conținut Tab activ
-    activeTab === 'main'
-      ? h(MainDashboard, { data, setData })
-      : h(DataTab, { data, setData })
+    )
   );
 }
 
