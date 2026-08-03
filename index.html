@@ -160,15 +160,109 @@ function Login({ onLogin, theme, toggleTheme }) {
   );
 }
 
-// Componenta Dashboard
-function Dashboard({ theme, toggleTheme }) {
-  const [data, setData] = useState(loadData);
+// Tabul de Gestiune Date (Export / Import / Reset)
+function DataTab({ data, setData }) {
+  const [statusMsg, setStatusMsg] = useState(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  // Funcție de Export Date (Download JSON)
+  const handleExport = () => {
+    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+    const downloadAnchor = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    downloadAnchor.setAttribute("href", jsonString);
+    downloadAnchor.setAttribute("download", `backup_revizii_${dateStr}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+
+    setStatusMsg({ type: 'success', text: 'Salvarea backup-ului a reusit!' });
+    setTimeout(() => setStatusMsg(null), 3000);
+  };
+
+  // Funcție de Import Date (Upload JSON)
+  const handleImport = (e) => {
+    const fileReader = new FileReader();
+    const file = e.target.files[0];
+    if (!file) return;
+
+    fileReader.readAsText(file, "UTF-8");
+    fileReader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        if (parsed && typeof parsed === 'object' && parsed.days) {
+          setData(parsed);
+          setStatusMsg({ type: 'success', text: 'Datele au fost importate cu succes!' });
+        } else {
+          setStatusMsg({ type: 'error', text: 'Formatul fisierului este invalid.' });
+        }
+      } catch (err) {
+        setStatusMsg({ type: 'error', text: 'Eroare la citirea fisierului JSON.' });
+      }
+      setTimeout(() => setStatusMsg(null), 3000);
+    };
+  };
+
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 16 } },
+    h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 20, border: '1px solid var(--border)' } },
+      h('h3', { style: { marginTop: 0, marginBottom: 6, fontSize: 16 } }, 'Exportă Datele'),
+      h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Descarcă o copie de siguranță a înregistrărilor tale pe telefon sau calculator.'),
+      h('button', {
+        onClick: handleExport,
+        style: { width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }
+      }, 'Descarcă Backup (.json)')
+    ),
+
+    h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 20, border: '1px solid var(--border)' } },
+      h('h3', { style: { marginTop: 0, marginBottom: 6, fontSize: 16 } }, 'Importă Datele'),
+      h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Incarcă un fișier de backup (.json) salvat anterior.'),
+      h('label', {
+        style: { display: 'block', width: '100%', padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontWeight: 600, fontSize: 14, textAlign: 'center', cursor: 'pointer' }
+      },
+        'Alege Fișier Backup',
+        h('input', {
+          type: 'file',
+          accept: '.json',
+          onChange: handleImport,
+          style: { display: 'none' }
+        })
+      )
+    ),
+
+    statusMsg && h('div', {
+      style: {
+        padding: '12px', borderRadius: 10, fontSize: 13, fontWeight: 500, textAlign: 'center',
+        background: statusMsg.type === 'success' ? 'var(--good-bg)' : 'var(--warn-bg)',
+        color: statusMsg.type === 'success' ? 'var(--good)' : 'var(--warn)'
+      }
+    }, statusMsg.text),
+
+    h('div', { style: { marginTop: 20, textAlign: 'center' } },
+      !confirmReset
+        ? h('button', {
+            onClick: () => setConfirmReset(true),
+            style: { background: 'none', border: 'none', color: 'var(--warn)', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }
+          }, 'Șterge toate datele din aplicație')
+        : h('div', { style: { display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'center', background: 'var(--surface)', padding: 16, borderRadius: 12, border: '1px solid var(--border)' } },
+            h('span', { style: { fontSize: 13, color: 'var(--warn)', fontWeight: 500 } }, 'Sigur ștergi tot?'),
+            h('button', {
+              onClick: () => { setData({ days: {} }); setConfirmReset(false); setStatusMsg({ type: 'success', text: 'Datele au fost șterse.' }); },
+              style: { background: 'var(--warn)', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }
+            }, 'Da, șterge'),
+            h('button', {
+              onClick: () => setConfirmReset(false),
+              style: { background: 'transparent', border: '1px solid var(--border)', color: 'var(--ink)', padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }
+            }, 'Anulează')
+          )
+    )
+  );
+}
+
+// Componenta Dashboard Principal (Tab "Pornire")
+function MainDashboard({ data, setData }) {
   const [now, setNow] = useState(new Date());
   const [justAdded, setJustAdded] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
-
-  useEffect(() => { saveData(data); }, [data]);
 
   const tKey = todayKey(now);
   const mKey = monthKey(now);
@@ -208,7 +302,7 @@ function Dashboard({ theme, toggleTheme }) {
     setJustAdded(rate);
     setTimeout(() => setJustAdded(null), 600);
     if (navigator.vibrate) navigator.vibrate(10);
-  }, [tKey]);
+  }, [tKey, setData]);
 
   const removeLastEntry = useCallback((rate) => {
     setData(prev => {
@@ -219,7 +313,7 @@ function Dashboard({ theme, toggleTheme }) {
       next.days[tKey] = arr;
       return next;
     });
-  }, [tKey]);
+  }, [tKey, setData]);
 
   const undoLastEntry = useCallback(() => {
     setData(prev => {
@@ -231,7 +325,7 @@ function Dashboard({ theme, toggleTheme }) {
       return next;
     });
     if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
-  }, [tKey]);
+  }, [tKey, setData]);
 
   const monthDaysSorted = useMemo(() => {
     return monthDays
@@ -246,20 +340,7 @@ function Dashboard({ theme, toggleTheme }) {
   const monthOverage = Math.max(0, monthSum - monthlyTarget);
   const monthBonus = monthOverage * BONUS_RATE;
 
-  return h('div', { style: { maxWidth: 480, margin: '0 auto', padding: '20px 16px' } },
-    // Header
-    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 } },
-      h('div', null,
-        h('div', { style: { fontSize: 13, color: 'var(--ink-faint)', fontWeight: 500, marginBottom: 2 } }, 'E.ON Asist Complet'),
-        h('div', { style: { fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em' } }, 'Revizii si verificari gaz'),
-        h('div', { style: { fontSize: 14, color: 'var(--ink-soft)', marginTop: 2 } }, dayLabel(tKey))
-      ),
-      h('button', {
-        onClick: toggleTheme,
-        style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
-      }, theme === 'light' ? '🌙' : '☀️')
-    ),
-
+  return h('div', null,
     // Today card
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)', marginBottom: 14 } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
@@ -368,22 +449,63 @@ function Dashboard({ theme, toggleTheme }) {
               h('div', { style: { fontSize: 16, fontWeight: 600, fontVariantNumeric: 'tabular-nums' } }, fmtRON(sum))
             );
           })
-    ),
-
-    // Reset
-    h('div', { style: { marginTop: 30, textAlign: 'center' } },
-      !confirmReset
-        ? h('button', { onClick: () => setConfirmReset(true), style: { background: 'none', border: 'none', color: 'var(--ink-faint)', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' } }, 'Sterge toate datele')
-        : h('div', { style: { display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' } },
-            h('span', { style: { fontSize: 12, color: 'var(--warn)' } }, 'Sigur?'),
-            h('button', { onClick: () => { setData({ days: {} }); setConfirmReset(false); }, style: { background: 'none', border: 'none', color: 'var(--warn)', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' } }, 'Da, sterge'),
-            h('button', { onClick: () => setConfirmReset(false), style: { background: 'none', border: 'none', color: 'var(--ink-faint)', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' } }, 'Anuleaza')
-          )
     )
   );
 }
 
-// App Root
+// Layout Principal cu Tab-uri
+function AppLayout({ theme, toggleTheme }) {
+  const [activeTab, setActiveTab] = useState('main'); // 'main' | 'data'
+  const [data, setData] = useState(loadData);
+
+  useEffect(() => { saveData(data); }, [data]);
+
+  const tKey = todayKey();
+
+  return h('div', { style: { maxWidth: 480, margin: '0 auto', padding: '20px 16px' } },
+    // Header
+    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 } },
+      h('div', null,
+        h('div', { style: { fontSize: 13, color: 'var(--ink-faint)', fontWeight: 500, marginBottom: 2 } }, 'E.ON Asist Complet'),
+        h('div', { style: { fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em' } }, 'Revizii si verificari gaz'),
+        h('div', { style: { fontSize: 14, color: 'var(--ink-soft)', marginTop: 2 } }, dayLabel(tKey))
+      ),
+      h('button', {
+        onClick: toggleTheme,
+        style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
+      }, theme === 'light' ? '🌙' : '☀️')
+    ),
+
+    // Selector Tab-uri
+    h('div', { style: { display: 'flex', background: 'var(--surface)', borderRadius: 12, padding: 4, border: '1px solid var(--border)', marginBottom: 20 } },
+      h('button', {
+        onClick: () => setActiveTab('main'),
+        style: {
+          flex: 1, padding: '10px', borderRadius: 8, border: 'none',
+          background: activeTab === 'main' ? 'var(--accent)' : 'transparent',
+          color: activeTab === 'main' ? '#fff' : 'var(--ink-soft)',
+          fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s ease'
+        }
+      }, 'Pornire'),
+      h('button', {
+        onClick: () => setActiveTab('data'),
+        style: {
+          flex: 1, padding: '10px', borderRadius: 8, border: 'none',
+          background: activeTab === 'data' ? 'var(--accent)' : 'transparent',
+          color: activeTab === 'data' ? '#fff' : 'var(--ink-soft)',
+          fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s ease'
+        }
+      }, 'Date')
+    ),
+
+    // Conținut Tab activ
+    activeTab === 'main'
+      ? h(MainDashboard, { data, setData })
+      : h(DataTab, { data, setData })
+  );
+}
+
+// Main App Root cu Logare
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('revizii_theme') || 'light');
@@ -399,18 +521,18 @@ function App() {
     return h(Login, { onLogin: () => setIsLoggedIn(true), theme, toggleTheme });
   }
 
-  return h(Dashboard, { theme, toggleTheme });
+  return h(AppLayout, { theme, toggleTheme });
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>
 
-<!-- Inregistrare Service Worker pentru PWA -->
+<!-- Service Worker PWA -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('SW ok'))
+        .then(() => console.log('SW registered'))
         .catch(err => console.error('SW err:', err));
     });
   }
