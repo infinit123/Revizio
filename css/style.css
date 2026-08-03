@@ -16,6 +16,22 @@
   --warn-bg: #faeeda;
 }
 
+[data-theme="dark"] {
+  --accent: #4a9eef;
+  --accent-light: #16324d;
+  --accent-mid: #378add;
+  --ink: #f0f1f2;
+  --ink-soft: #b8bcc0;
+  --ink-faint: #7d8388;
+  --bg: #131518;
+  --surface: #1e2124;
+  --border: #33373b;
+  --good: #3ddba8;
+  --good-bg: #133d32;
+  --warn: #f5b95c;
+  --warn-bg: #3d2f14;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -24,6 +40,7 @@ html, body {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: contain;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 #root {
