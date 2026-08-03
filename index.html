@@ -2,20 +2,43 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Revizii Gaz - Tracker</title>
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Revizii">
 
-<!-- Configurare PWA pentru Android -->
+<!-- Configurare PWA / APK -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0c447c">
 
 <style>
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  * { 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; 
+  }
   
+  /* Optimizare APK: Previne selectarea textului și scroll-ul elastic */
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+    touch-action: pan-x pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  /* Permite selectare doar în căsuțe de text */
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
   /* Light Mode Variables */
   :root {
     --accent: #0c447c;
@@ -50,15 +73,6 @@
     --warn-bg: #452703;
   }
 
-  html, body {
-    margin: 0; padding: 0;
-    background: var(--bg);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-    color: var(--ink);
-    -webkit-font-smoothing: antialiased;
-    overscroll-behavior-y: contain;
-    transition: background 0.3s ease, color 0.3s ease;
-  }
   #root { min-height: 100vh; padding-bottom: 40px; }
   ::-webkit-scrollbar { display: none; }
 </style>
@@ -118,7 +132,7 @@ function dayLabel(key) {
   return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
 }
 
-// Componenta de Logare
+// Login Component
 function Login({ onLogin, theme, toggleTheme }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
@@ -160,7 +174,7 @@ function Login({ onLogin, theme, toggleTheme }) {
   );
 }
 
-// Tabul de Gestiune Date (Export / Import / Reset)
+// DataTab Component
 function DataTab({ data, setData }) {
   const [statusMsg, setStatusMsg] = useState(null);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -204,7 +218,7 @@ function DataTab({ data, setData }) {
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 16 } },
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 20, border: '1px solid var(--border)' } },
       h('h3', { style: { marginTop: 0, marginBottom: 6, fontSize: 16 } }, 'Exportă Datele'),
-      h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Descarcă o copie de siguranță a înregistrărilor tale pe telefon sau calculator.'),
+      h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Descarcă o copie de siguranță a înregistrărilor tale pe telefon.'),
       h('button', {
         onClick: handleExport,
         style: { width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }
@@ -256,15 +270,23 @@ function DataTab({ data, setData }) {
   );
 }
 
-// Componenta Dashboard Principal (Tab "Pornire")
+// Main Dashboard
 function MainDashboard({ data, setData }) {
   const [now, setNow] = useState(new Date());
   const [justAdded, setJustAdded] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
-  
-  // State pentru modalul de sumă personalizată
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customGrossInput, setCustomGrossInput] = useState('');
+
+  // Optimizare Android: Interceptare Hardware Back Button pentru Modal
+  useEffect(() => {
+    if (showCustomModal) {
+      window.history.pushState({ modalOpen: true }, '');
+      const handlePopState = () => setShowCustomModal(false);
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [showCustomModal]);
 
   const tKey = todayKey(now);
   const mKey = monthKey(now);
@@ -272,13 +294,11 @@ function MainDashboard({ data, setData }) {
   const todayEntries = data.days[tKey] || [];
   const todaySum = todayEntries.reduce((a, b) => a + b, 0);
 
-  // Calculează numărul de înregistrări pe fiecare categorie standard
   const todayCounts = RATES.reduce((acc, r) => {
     acc[r] = todayEntries.filter(e => e === r).length;
     return acc;
   }, {});
 
-  // Identifică înregistrările cu sume atipice/personalizate
   const customEntries = todayEntries.filter(e => !RATES.includes(e));
 
   const monthDays = useMemo(() => {
@@ -315,8 +335,6 @@ function MainDashboard({ data, setData }) {
     e.preventDefault();
     const grossVal = parseFloat(customGrossInput);
     if (isNaN(grossVal) || grossVal <= 0) return;
-
-    // Calculare valoare fără TVA 21%
     const netVal = Math.round((grossVal / (1 + VAT_RATE)) * 100) / 100;
     addEntry(netVal);
     setCustomGrossInput('');
@@ -353,14 +371,13 @@ function MainDashboard({ data, setData }) {
   }, [monthDays, data]);
 
   const avgPerWorkday = workdaysSoFar > 0 ? monthSum / workdaysSoFar : 0;
-
   const todayOverage = Math.max(0, todaySum - DAILY_TARGET);
   const todayBonus = todayOverage * BONUS_RATE;
   const monthOverage = Math.max(0, monthSum - monthlyTarget);
   const monthBonus = monthOverage * BONUS_RATE;
 
   return h('div', null,
-    // Today card
+    // Today Card
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)', marginBottom: 14 } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
         h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Azi'),
@@ -382,7 +399,7 @@ function MainDashboard({ data, setData }) {
       )
     ),
 
-    // Rate buttons (Standard)
+    // Rate Buttons
     h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 } },
       RATES.map((rate, i) =>
         h('button', {
@@ -403,7 +420,7 @@ function MainDashboard({ data, setData }) {
       )
     ),
 
-    // Buton Sumă Personalizată
+    // Custom Rate Button
     h('button', {
       onClick: () => setShowCustomModal(true),
       style: {
@@ -415,13 +432,12 @@ function MainDashboard({ data, setData }) {
 
     h('div', { style: { fontSize: 11, color: 'var(--ink-faint)', textAlign: 'center', marginBottom: 14 } }, 'Toate calculele de mai sus (tinta, luna, bonus) sunt fara TVA'),
 
-    // Undo last entry
+    // Undo Actions
     todayEntries.length > 0 && h('button', {
       onClick: undoLastEntry,
       style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--warn)', background: 'var(--warn-bg)', border: 'none', borderRadius: 12, padding: '10px 12px', fontFamily: 'inherit', cursor: 'pointer', marginBottom: 12 }
     }, `Anuleaza ultima verificare adaugata (${grossOf(todayEntries[todayEntries.length - 1])} lei)`),
 
-    // Per-rate undo (Standard + Custom)
     todayEntries.length > 0 && h('div', { style: { display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' } },
       RATES.filter(r => todayCounts[r] > 0).map(rate =>
         h('button', {
@@ -439,7 +455,7 @@ function MainDashboard({ data, setData }) {
       )
     ),
 
-    // Month card
+    // Month Card
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)', marginBottom: 14 } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
         h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Luna aceasta'),
@@ -462,7 +478,7 @@ function MainDashboard({ data, setData }) {
       )
     ),
 
-    // History toggle
+    // History Toggle
     h('button', {
       onClick: () => setShowHistory(s => !s),
       style: { width: '100%', background: 'transparent', border: 'none', color: 'var(--accent)', fontSize: 14, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', padding: '10px 0', textAlign: 'center' }
@@ -500,7 +516,7 @@ function MainDashboard({ data, setData }) {
     },
       h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360, border: '1px solid var(--border)' } },
         h('h3', { style: { marginTop: 0, marginBottom: 8, fontSize: 18 } }, 'Sumă Personalizată'),
-        h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Introdu suma totală încasată de la client (cu TVA 21%). Aplicația va calcula automat valoarea fără TVA.'),
+        h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Introdu suma totală încasată de la client (cu TVA 21%).'),
         h('form', { onSubmit: handleAddCustom, style: { display: 'flex', flexDirection: 'column', gap: 12 } },
           h('input', {
             type: 'number',
@@ -531,9 +547,9 @@ function MainDashboard({ data, setData }) {
   );
 }
 
-// Layout Principal cu Tab-uri
+// Layout Principal
 function AppLayout({ theme, toggleTheme }) {
-  const [activeTab, setActiveTab] = useState('main'); // 'main' | 'data'
+  const [activeTab, setActiveTab] = useState('main');
   const [data, setData] = useState(loadData);
 
   useEffect(() => { saveData(data); }, [data]);
@@ -541,7 +557,6 @@ function AppLayout({ theme, toggleTheme }) {
   const tKey = todayKey();
 
   return h('div', { style: { maxWidth: 480, margin: '0 auto', padding: '20px 16px' } },
-    // Header
     h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 } },
       h('div', null,
         h('div', { style: { fontSize: 13, color: 'var(--ink-faint)', fontWeight: 500, marginBottom: 2 } }, 'E.ON Asist Complet'),
@@ -554,7 +569,6 @@ function AppLayout({ theme, toggleTheme }) {
       }, theme === 'light' ? '🌙' : '☀️')
     ),
 
-    // Selector Tab-uri
     h('div', { style: { display: 'flex', background: 'var(--surface)', borderRadius: 12, padding: 4, border: '1px solid var(--border)', marginBottom: 20 } },
       h('button', {
         onClick: () => setActiveTab('main'),
@@ -576,14 +590,13 @@ function AppLayout({ theme, toggleTheme }) {
       }, 'Date')
     ),
 
-    // Conținut Tab activ
     activeTab === 'main'
       ? h(MainDashboard, { data, setData })
       : h(DataTab, { data, setData })
   );
 }
 
-// Main App Root cu Logare
+// App Root
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('revizii_theme') || 'light');
@@ -605,13 +618,13 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 </script>
 
-<!-- Service Worker PWA -->
+<!-- Service Worker Registration -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('SW registered'))
-        .catch(err => console.error('SW err:', err));
+        .then(() => console.log('SW Registered'))
+        .catch(err => console.error('SW Error:', err));
     });
   }
 </script>
