@@ -165,7 +165,6 @@ function DataTab({ data, setData }) {
   const [statusMsg, setStatusMsg] = useState(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
-  // Funcție de Export Date (Download JSON)
   const handleExport = () => {
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
     const downloadAnchor = document.createElement('a');
@@ -180,7 +179,6 @@ function DataTab({ data, setData }) {
     setTimeout(() => setStatusMsg(null), 3000);
   };
 
-  // Funcție de Import Date (Upload JSON)
   const handleImport = (e) => {
     const fileReader = new FileReader();
     const file = e.target.files[0];
@@ -263,16 +261,25 @@ function MainDashboard({ data, setData }) {
   const [now, setNow] = useState(new Date());
   const [justAdded, setJustAdded] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  
+  // State pentru modalul de sumă personalizată
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [customGrossInput, setCustomGrossInput] = useState('');
 
   const tKey = todayKey(now);
   const mKey = monthKey(now);
 
   const todayEntries = data.days[tKey] || [];
   const todaySum = todayEntries.reduce((a, b) => a + b, 0);
+
+  // Calculează numărul de înregistrări pe fiecare categorie standard
   const todayCounts = RATES.reduce((acc, r) => {
     acc[r] = todayEntries.filter(e => e === r).length;
     return acc;
   }, {});
+
+  // Identifică înregistrările cu sume atipice/personalizate
+  const customEntries = todayEntries.filter(e => !RATES.includes(e));
 
   const monthDays = useMemo(() => {
     return Object.keys(data.days).filter(k => k.startsWith(mKey));
@@ -291,24 +298,36 @@ function MainDashboard({ data, setData }) {
   const remainingToday = Math.max(0, DAILY_TARGET - todaySum);
   const diffVsExpected = monthSum - expectedSoFar;
 
-  const addEntry = useCallback((rate) => {
+  const addEntry = useCallback((netRate) => {
     setData(prev => {
       const next = { ...prev, days: { ...prev.days } };
       const arr = next.days[tKey] ? [...next.days[tKey]] : [];
-      arr.push(rate);
+      arr.push(netRate);
       next.days[tKey] = arr;
       return next;
     });
-    setJustAdded(rate);
+    setJustAdded(netRate);
     setTimeout(() => setJustAdded(null), 600);
     if (navigator.vibrate) navigator.vibrate(10);
   }, [tKey, setData]);
 
-  const removeLastEntry = useCallback((rate) => {
+  const handleAddCustom = (e) => {
+    e.preventDefault();
+    const grossVal = parseFloat(customGrossInput);
+    if (isNaN(grossVal) || grossVal <= 0) return;
+
+    // Calculare valoare fără TVA 21%
+    const netVal = Math.round((grossVal / (1 + VAT_RATE)) * 100) / 100;
+    addEntry(netVal);
+    setCustomGrossInput('');
+    setShowCustomModal(false);
+  };
+
+  const removeLastEntry = useCallback((netRate) => {
     setData(prev => {
       const next = { ...prev, days: { ...prev.days } };
       const arr = next.days[tKey] ? [...next.days[tKey]] : [];
-      const idx = arr.lastIndexOf(rate);
+      const idx = arr.lastIndexOf(netRate);
       if (idx > -1) arr.splice(idx, 1);
       next.days[tKey] = arr;
       return next;
@@ -363,8 +382,8 @@ function MainDashboard({ data, setData }) {
       )
     ),
 
-    // Rate buttons
-    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 6 } },
+    // Rate buttons (Standard)
+    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 } },
       RATES.map((rate, i) =>
         h('button', {
           key: rate,
@@ -373,7 +392,7 @@ function MainDashboard({ data, setData }) {
             background: justAdded === rate ? 'var(--accent)' : 'var(--surface)',
             color: justAdded === rate ? '#fff' : 'var(--ink)',
             border: '1px solid ' + (justAdded === rate ? 'var(--accent)' : 'var(--border)'),
-            borderRadius: 14, padding: '18px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.15s ease', transform: justAdded === rate ? 'scale(0.96)' : 'scale(1)'
+            borderRadius: 14, padding: '16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.15s ease', transform: justAdded === rate ? 'scale(0.96)' : 'scale(1)'
           }
         },
           h('span', { style: { fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' } }, GROSS_RATES[i]),
@@ -383,6 +402,17 @@ function MainDashboard({ data, setData }) {
         )
       )
     ),
+
+    // Buton Sumă Personalizată
+    h('button', {
+      onClick: () => setShowCustomModal(true),
+      style: {
+        width: '100%', background: 'var(--surface)', border: '1px dashed var(--accent)', color: 'var(--accent)',
+        borderRadius: 12, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+      }
+    }, '➕ Adaugă sumă personalizată (cu TVA)'),
+
     h('div', { style: { fontSize: 11, color: 'var(--ink-faint)', textAlign: 'center', marginBottom: 14 } }, 'Toate calculele de mai sus (tinta, luna, bonus) sunt fara TVA'),
 
     // Undo last entry
@@ -391,7 +421,7 @@ function MainDashboard({ data, setData }) {
       style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--warn)', background: 'var(--warn-bg)', border: 'none', borderRadius: 12, padding: '10px 12px', fontFamily: 'inherit', cursor: 'pointer', marginBottom: 12 }
     }, `Anuleaza ultima verificare adaugata (${grossOf(todayEntries[todayEntries.length - 1])} lei)`),
 
-    // Per-rate undo
+    // Per-rate undo (Standard + Custom)
     todayEntries.length > 0 && h('div', { style: { display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' } },
       RATES.filter(r => todayCounts[r] > 0).map(rate =>
         h('button', {
@@ -399,6 +429,13 @@ function MainDashboard({ data, setData }) {
           onClick: () => removeLastEntry(rate),
           style: { fontSize: 12, color: 'var(--ink-faint)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 20, padding: '6px 12px', fontFamily: 'inherit', cursor: 'pointer' }
         }, `- o verificare de ${grossOf(rate)}`)
+      ),
+      customEntries.map((netRate, idx) =>
+        h('button', {
+          key: 'undo-custom-' + idx,
+          onClick: () => removeLastEntry(netRate),
+          style: { fontSize: 12, color: 'var(--warn)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 20, padding: '6px 12px', fontFamily: 'inherit', cursor: 'pointer' }
+        }, `- suma ${grossOf(netRate)} lei`)
       )
     ),
 
@@ -438,17 +475,58 @@ function MainDashboard({ data, setData }) {
             const entries = data.days[key];
             const sum = entries.reduce((a,b) => a+b, 0);
             const counts = RATES.reduce((acc, r) => { acc[r] = entries.filter(e => e === r).length; return acc; }, {});
+            const customs = entries.filter(e => !RATES.includes(e));
             return h('div', {
               key,
               style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
             },
               h('div', null,
                 h('div', { style: { fontSize: 14, fontWeight: 500 } }, dayLabel(key)),
-                h('div', { style: { fontSize: 12, color: 'var(--ink-faint)', marginTop: 2 } }, RATES.filter(r => counts[r] > 0).map(r => `${counts[r]}x${grossOf(r)}`).join('  '))
+                h('div', { style: { fontSize: 12, color: 'var(--ink-faint)', marginTop: 2 } }, 
+                  [
+                    ...RATES.filter(r => counts[r] > 0).map(r => `${counts[r]}x${grossOf(r)}`),
+                    ...customs.map(c => `1x${grossOf(c)}`)
+                  ].join('  ')
+                )
               ),
               h('div', { style: { fontSize: 16, fontWeight: 600, fontVariantNumeric: 'tabular-nums' } }, fmtRON(sum))
             );
           })
+    ),
+
+    // Modal Sumă Personalizată
+    showCustomModal && h('div', {
+      style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }
+    },
+      h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360, border: '1px solid var(--border)' } },
+        h('h3', { style: { marginTop: 0, marginBottom: 8, fontSize: 18 } }, 'Sumă Personalizată'),
+        h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Introdu suma totală încasată de la client (cu TVA 21%). Aplicația va calcula automat valoarea fără TVA.'),
+        h('form', { onSubmit: handleAddCustom, style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+          h('input', {
+            type: 'number',
+            step: 'any',
+            placeholder: 'ex: 450',
+            value: customGrossInput,
+            onChange: (e) => setCustomGrossInput(e.target.value),
+            autoFocus: true,
+            style: { padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 16 }
+          }),
+          customGrossInput > 0 && h('div', { style: { fontSize: 12, color: 'var(--ink-faint)' } }, 
+            `Fără TVA (21%): ${(parseFloat(customGrossInput) / (1 + VAT_RATE)).toFixed(2)} lei`
+          ),
+          h('div', { style: { display: 'flex', gap: 10, marginTop: 8 } },
+            h('button', {
+              type: 'button',
+              onClick: () => setShowCustomModal(false),
+              style: { flex: 1, padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--ink)', cursor: 'pointer' }
+            }, 'Renunță'),
+            h('button', {
+              type: 'submit',
+              style: { flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }
+            }, 'Adaugă')
+          )
+        )
+      )
     )
   );
 }
