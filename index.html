@@ -96,6 +96,7 @@ const RATES = GROSS_RATES.map(r => Math.round((r / (1 + VAT_RATE)) * 100) / 100)
 const DAILY_TARGET = 1500;
 const BONUS_RATE = 0.31;
 const STORAGE_KEY = 'revizii_data_v2';
+const USERS_KEY = 'eon_app_users';
 
 function todayKey(d = new Date()) {
   return d.toISOString().slice(0, 10);
@@ -113,6 +114,17 @@ function loadData() {
 function saveData(data) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
 }
+function loadUsers() {
+  try {
+    const raw = localStorage.getItem(USERS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [];
+}
+function saveUsers(users) {
+  try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (e) {}
+}
+
 function countWorkdays(year, month, uptoDay) {
   let count = 0;
   const lastDay = uptoDay || new Date(year, month + 1, 0).getDate();
@@ -136,21 +148,65 @@ function dayLabel(key) {
   return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
 }
 
-// Componenta de Logare
-function Login({ onLogin, theme, toggleTheme }) {
-  const [pin, setPin] = useState('');
+// Componenta de Autentificare și Înregistrare (Log In / Sign Up)
+function Auth({ onLoginSuccess, theme, toggleTheme }) {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (pin === '1234') {
-      onLogin();
+    setError('');
+    setSuccess('');
+
+    const uName = username.trim();
+    if (!uName || !password) {
+      setError('Completează toate câmpurile.');
+      return;
+    }
+
+    const users = loadUsers();
+
+    if (isSignUp) {
+      // Logica de Sign Up
+      if (password !== confirmPassword) {
+        setError('Parolele nu se potrivesc.');
+        return;
+      }
+      const existingUser = users.find(u => u.username.toLowerCase() === uName.toLowerCase());
+      if (existingUser) {
+        setError('Numele de utilizator este deja folosit.');
+        return;
+      }
+
+      users.push({ username: uName, password });
+      saveUsers(users);
+      setSuccess('Cont creat cu succes! Te poți autentifica.');
+      setIsSignUp(false);
+      setPassword('');
+      setConfirmPassword('');
     } else {
-      setError('PIN incorect.');
+      // Logica de Log In
+      const user = users.find(u => u.username.toLowerCase() === uName.toLowerCase() && u.password === password);
+      
+      // Dacă nu există utilizatori deloc, permite logarea default cu admin/1234
+      if (!user && users.length === 0 && uName.toLowerCase() === 'admin' && password === '1234') {
+        onLoginSuccess(uName);
+        return;
+      }
+
+      if (user) {
+        onLoginSuccess(user.username);
+      } else {
+        setError('Nume de utilizator sau parolă incorectă.');
+      }
     }
   };
 
-  return h('div', { style: { maxWidth: 360, margin: '0 auto', paddingTop: 80, paddingLeft: 20, paddingRight: 20 } },
+  return h('div', { style: { maxWidth: 360, margin: '0 auto', paddingTop: 60, paddingLeft: 20, paddingRight: 20 } },
     h('div', { style: { display: 'flex', justifyContent: 'flex-end', marginBottom: 20 } },
       h('button', {
         onClick: toggleTheme,
@@ -158,22 +214,48 @@ function Login({ onLogin, theme, toggleTheme }) {
       }, theme === 'light' ? '🌙' : '☀️')
     ),
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 24, border: '1px solid var(--border)', textAlign: 'center' } },
-      h('div', { className: 'eon-brand-text', style: { marginBottom: 12, fontSize: 16 } }, 'E.ON Asist Complet'),
-      h('h2', { style: { marginBottom: 8, marginTop: 0, color: 'var(--ink)' } }, 'Autentificare'),
-      h('p', { style: { color: 'var(--ink-faint)', fontSize: 14, marginBottom: 24 } }, 'Introdu codul PIN pentru a continua.'),
+      h('div', { className: 'eon-brand-text', style: { marginBottom: 8, fontSize: 16 } }, 'E.ON Asist Complet'),
+      h('h2', { style: { marginBottom: 6, marginTop: 0, color: 'var(--ink)' } }, isSignUp ? 'Creare Cont' : 'Autentificare'),
+      h('p', { style: { color: 'var(--ink-faint)', fontSize: 13, marginBottom: 20 } }, 
+        isSignUp ? 'Creează un cont pentru a-ți salva datele.' : 'Introdu datele de acces pentru a continua.'
+      ),
+      
       h('form', { onSubmit: handleSubmit, style: { display: 'flex', flexDirection: 'column', gap: 12 } },
         h('input', {
-          type: 'password',
-          value: pin,
-          onChange: (e) => setPin(e.target.value),
-          placeholder: 'PIN',
-          style: { padding: '14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 16, textAlign: 'center', letterSpacing: '0.2em' }
+          type: 'text',
+          value: username,
+          onChange: (e) => setUsername(e.target.value),
+          placeholder: 'Utilizator',
+          style: { padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 15 }
         }),
+        h('input', {
+          type: 'password',
+          value: password,
+          onChange: (e) => setPassword(e.target.value),
+          placeholder: 'Parolă',
+          style: { padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 15 }
+        }),
+        isSignUp && h('input', {
+          type: 'password',
+          value: confirmPassword,
+          onChange: (e) => setConfirmPassword(e.target.value),
+          placeholder: 'Confirmă Parola',
+          style: { padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 15 }
+        }),
+        
         error && h('div', { style: { color: 'var(--warn)', fontSize: 13 } }, error),
+        success && h('div', { style: { color: 'var(--good)', fontSize: 13 } }, success),
+        
         h('button', {
           type: 'submit',
-          style: { padding: '14px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 16, fontWeight: 600, cursor: 'pointer', marginTop: 8 }
-        }, 'Intra')
+          style: { padding: '14px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 6 }
+        }, isSignUp ? 'Înregistrează-te' : 'Intră în Cont'),
+
+        h('button', {
+          type: 'button',
+          onClick: () => { setIsSignUp(!isSignUp); setError(''); setSuccess(''); },
+          style: { background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, cursor: 'pointer', marginTop: 10 }
+        }, isSignUp ? 'Ai deja cont? Autentifică-te' : 'Nu ai cont? Creează cont nou')
       )
     )
   );
@@ -194,7 +276,7 @@ function DataTab({ data, setData }) {
     downloadAnchor.click();
     downloadAnchor.remove();
 
-    setStatusMsg({ type: 'success', text: 'Salvarea backup-ului a reusit!' });
+    setStatusMsg({ type: 'success', text: 'Salvarea backup-ului a reușit!' });
     setTimeout(() => setStatusMsg(null), 3000);
   };
 
@@ -211,10 +293,10 @@ function DataTab({ data, setData }) {
           setData(parsed);
           setStatusMsg({ type: 'success', text: 'Datele au fost importate cu succes!' });
         } else {
-          setStatusMsg({ type: 'error', text: 'Formatul fisierului este invalid.' });
+          setStatusMsg({ type: 'error', text: 'Formatul fișierului este invalid.' });
         }
       } catch (err) {
-        setStatusMsg({ type: 'error', text: 'Eroare la citirea fisierului JSON.' });
+        setStatusMsg({ type: 'error', text: 'Eroare la citirea fișierului JSON.' });
       }
       setTimeout(() => setStatusMsg(null), 3000);
     };
@@ -232,7 +314,7 @@ function DataTab({ data, setData }) {
 
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: 20, border: '1px solid var(--border)' } },
       h('h3', { style: { marginTop: 0, marginBottom: 6, fontSize: 16 } }, 'Importă Datele'),
-      h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Incarcă un fișier de backup (.json) salvat anterior.'),
+      h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 0, marginBottom: 16 } }, 'Încarcă un fișier de backup (.json) salvat anterior.'),
       h('label', {
         style: { display: 'block', width: '100%', padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontWeight: 600, fontSize: 14, textAlign: 'center', cursor: 'pointer' }
       },
@@ -379,7 +461,7 @@ function MainDashboard({ data, setData }) {
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)', marginBottom: 14 } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
         h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Azi'),
-        h('span', { style: { fontSize: 13, color: 'var(--ink-faint)' } }, `tinta ${fmtRON(DAILY_TARGET)}`)
+        h('span', { style: { fontSize: 13, color: 'var(--ink-faint)' } }, `țintă ${fmtRON(DAILY_TARGET)}`)
       ),
       h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 } },
         h('span', { style: { fontSize: 40, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' } }, fmtRON(todaySum).replace(' lei','')),
@@ -389,7 +471,7 @@ function MainDashboard({ data, setData }) {
         h('div', { style: { height: '100%', width: todayProgress + '%', background: todayProgress >= 100 ? 'var(--good)' : 'var(--accent)', borderRadius: 6, transition: 'width 0.4s ease' } })
       ),
       h('div', { style: { fontSize: 14, color: todayProgress >= 100 ? 'var(--good)' : 'var(--ink-soft)', fontWeight: 500 } },
-        todayProgress >= 100 ? `Tinta atinsa. Peste target cu ${fmtRON(todayOverage)}.` : `Mai ai nevoie de ${fmtRON(remainingToday)}.`
+        todayProgress >= 100 ? `Țintă atinsă. Peste target cu ${fmtRON(todayOverage)}.` : `Mai ai nevoie de ${fmtRON(remainingToday)}.`
       ),
       todayOverage > 0 && h('div', { style: { marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--accent-light)', borderRadius: 10, padding: '10px 12px' } },
         h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 600 } }, 'Bonus 31% azi'),
@@ -412,7 +494,7 @@ function MainDashboard({ data, setData }) {
         },
           h('span', { style: { fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' } }, GROSS_RATES[i]),
           h('span', { style: { fontSize: 11, opacity: 0.75, fontWeight: 500 } }, 'lei cu TVA'),
-          h('span', { style: { fontSize: 11, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: justAdded === rate ? 'rgba(255,255,255,0.85)' : 'var(--ink-faint)' } }, `fara TVA: ${rate.toFixed(2)}`),
+          h('span', { style: { fontSize: 11, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: justAdded === rate ? 'rgba(255,255,255,0.85)' : 'var(--ink-faint)' } }, `fără TVA: ${rate.toFixed(2)}`),
           todayCounts[rate] > 0 && h('span', { style: { marginTop: 2, fontSize: 12, fontWeight: 600, background: justAdded === rate ? 'rgba(255,255,255,0.25)' : 'var(--accent-light)', color: justAdded === rate ? '#fff' : 'var(--accent)', borderRadius: 20, padding: '2px 8px' } }, `x${todayCounts[rate]}`)
         )
       )
@@ -428,15 +510,15 @@ function MainDashboard({ data, setData }) {
       }
     }, '➕ Adaugă sumă personalizată (cu TVA)'),
 
-    h('div', { style: { fontSize: 11, color: 'var(--ink-faint)', textAlign: 'center', marginBottom: 14 } }, 'Toate calculele de mai sus (tinta, luna, bonus) sunt fara TVA'),
+    h('div', { style: { fontSize: 11, color: 'var(--ink-faint)', textAlign: 'center', marginBottom: 14 } }, 'Toate calculele de mai sus (țintă, lună, bonus) sunt fără TVA'),
 
     // Undo last entry
     todayEntries.length > 0 && h('button', {
       onClick: undoLastEntry,
       style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--warn)', background: 'var(--warn-bg)', border: 'none', borderRadius: 12, padding: '10px 12px', fontFamily: 'inherit', cursor: 'pointer', marginBottom: 12 }
-    }, `Anuleaza ultima verificare adaugata (${grossOf(todayEntries[todayEntries.length - 1])} lei)`),
+    }, `Anulează ultima verificare adăugată (${grossOf(todayEntries[todayEntries.length - 1])} lei)`),
 
-    // Per-rate undo (Standard + Custom)
+    // Per-rate undo
     todayEntries.length > 0 && h('div', { style: { display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' } },
       RATES.filter(r => todayCounts[r] > 0).map(rate =>
         h('button', {
@@ -458,7 +540,7 @@ function MainDashboard({ data, setData }) {
     h('div', { style: { background: 'var(--surface)', borderRadius: 16, padding: '20px', border: '1px solid var(--border)', marginBottom: 14 } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
         h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Luna aceasta'),
-        h('span', { style: { fontSize: 13, color: 'var(--ink-faint)' } }, `${workdaysSoFar}/${totalWorkdaysInMonth} zile lucratoare`)
+        h('span', { style: { fontSize: 13, color: 'var(--ink-faint)' } }, `${workdaysSoFar}/${totalWorkdaysInMonth} zile lucrătoare`)
       ),
       h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 } },
         h('span', { style: { fontSize: 28, fontWeight: 700, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' } }, fmtRON(monthSum)),
@@ -468,9 +550,9 @@ function MainDashboard({ data, setData }) {
         h('div', { style: { height: '100%', width: monthProgress + '%', background: 'var(--accent)', borderRadius: 6, transition: 'width 0.4s ease' } })
       ),
       h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: diffVsExpected >= 0 ? 'var(--good)' : 'var(--warn)', background: diffVsExpected >= 0 ? 'var(--good-bg)' : 'var(--warn-bg)', borderRadius: 10, padding: '8px 12px' } },
-        diffVsExpected >= 0 ? `Esti in avans cu ${fmtRON(diffVsExpected)} fata de ritmul necesar.` : `Esti in urma cu ${fmtRON(Math.abs(diffVsExpected))} fata de ritmul necesar.`
+        diffVsExpected >= 0 ? `Ești în avans cu ${fmtRON(diffVsExpected)} față de ritmul necesar.` : `Ești în urmă cu ${fmtRON(Math.abs(diffVsExpected))} față de ritmul necesar.`
       ),
-      h('div', { style: { marginTop: 12, fontSize: 13, color: 'var(--ink-faint)' } }, `Medie ${fmtRON(avgPerWorkday)} / zi lucratoare`),
+      h('div', { style: { marginTop: 12, fontSize: 13, color: 'var(--ink-faint)' } }, `Medie ${fmtRON(avgPerWorkday)} / zi lucrătoare`),
       monthOverage > 0 && h('div', { style: { marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--accent-light)', borderRadius: 10, padding: '10px 12px' } },
         h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 600 } }, 'Bonus 31% luna asta'),
         h('span', { style: { fontSize: 16, fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' } }, fmtRON(monthBonus))
@@ -485,7 +567,7 @@ function MainDashboard({ data, setData }) {
 
     showHistory && h('div', { style: { marginTop: 4 } },
       monthDaysSorted.length === 0
-        ? h('div', { style: { textAlign: 'center', color: 'var(--ink-faint)', fontSize: 14, padding: 20 } }, 'Nicio inregistrare inca luna asta.')
+        ? h('div', { style: { textAlign: 'center', color: 'var(--ink-faint)', fontSize: 14, padding: 20 } }, 'Nicio înregistrare încă luna asta.')
         : monthDaysSorted.map(key => {
             const entries = data.days[key];
             const sum = entries.reduce((a,b) => a+b, 0);
@@ -547,7 +629,7 @@ function MainDashboard({ data, setData }) {
 }
 
 // Layout Principal cu Tab-uri
-function AppLayout({ theme, toggleTheme }) {
+function AppLayout({ user, onLogout, theme, toggleTheme }) {
   const [activeTab, setActiveTab] = useState('main');
   const [data, setData] = useState(loadData);
 
@@ -560,13 +642,20 @@ function AppLayout({ theme, toggleTheme }) {
     h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 } },
       h('div', null,
         h('div', { className: 'eon-brand-text' }, 'E.ON Asist Complet'),
-        h('div', { style: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', marginTop: 2 } }, 'Revizii si verificari gaz'),
-        h('div', { style: { fontSize: 14, color: 'var(--ink-soft)', marginTop: 2 } }, dayLabel(tKey))
+        h('div', { style: { fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', marginTop: 2 } }, 'Revizii și verificări gaz'),
+        h('div', { style: { fontSize: 13, color: 'var(--ink-soft)', marginTop: 2 } }, `Salut, ${user}! • ${dayLabel(tKey)}`)
       ),
-      h('button', {
-        onClick: toggleTheme,
-        style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
-      }, theme === 'light' ? '🌙' : '☀️')
+      h('div', { style: { display: 'flex', gap: 8 } },
+        h('button', {
+          onClick: toggleTheme,
+          style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--ink)' }
+        }, theme === 'light' ? '🌙' : '☀️'),
+        h('button', {
+          onClick: onLogout,
+          title: 'Ieșire din cont',
+          style: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: 'var(--warn)' }
+        }, '🚪')
+      )
     ),
 
     // Selector Tab-uri
@@ -598,9 +687,9 @@ function AppLayout({ theme, toggleTheme }) {
   );
 }
 
-// Main App Root cu Logare
+// Main App Root
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => localStorage.getItem('eon_active_user') || null);
   const [theme, setTheme] = useState(() => localStorage.getItem('revizii_theme') || 'light');
 
   useEffect(() => {
@@ -608,13 +697,23 @@ function App() {
     localStorage.setItem('revizii_theme', theme);
   }, [theme]);
 
+  const handleLoginSuccess = (username) => {
+    localStorage.setItem('eon_active_user', username);
+    setCurrentUser(username);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('eon_active_user');
+    setCurrentUser(null);
+  };
+
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
-  if (!isLoggedIn) {
-    return h(Login, { onLogin: () => setIsLoggedIn(true), theme, toggleTheme });
+  if (!currentUser) {
+    return h(Auth, { onLoginSuccess: handleLoginSuccess, theme, toggleTheme });
   }
 
-  return h(AppLayout, { theme, toggleTheme });
+  return h(AppLayout, { user: currentUser, onLogout: handleLogout, theme, toggleTheme });
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
