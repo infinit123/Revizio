@@ -8,6 +8,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Revizii">
+
+<!-- Configurare PWA pentru Android -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0c447c">
+
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   
@@ -155,7 +160,7 @@ function Login({ onLogin, theme, toggleTheme }) {
   );
 }
 
-// Fosta componentă App a devenit Dashboard
+// Componenta Dashboard
 function Dashboard({ theme, toggleTheme }) {
   const [data, setData] = useState(loadData);
   const [now, setNow] = useState(new Date());
@@ -242,7 +247,7 @@ function Dashboard({ theme, toggleTheme }) {
   const monthBonus = monthOverage * BONUS_RATE;
 
   return h('div', { style: { maxWidth: 480, margin: '0 auto', padding: '20px 16px' } },
-    // Header cu switch temă
+    // Header
     h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 } },
       h('div', null,
         h('div', { style: { fontSize: 13, color: 'var(--ink-faint)', fontWeight: 500, marginBottom: 2 } }, 'E.ON Asist Complet'),
@@ -378,9 +383,8 @@ function Dashboard({ theme, toggleTheme }) {
   );
 }
 
-// Main App Component care gestionează state-ul global
+// App Root
 function App() {
-  // Starea de autentificare (în aplicații de producție se va folosi un token sau o sesiune validă)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('revizii_theme') || 'light');
 
@@ -399,6 +403,17 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>
+
+<!-- Inregistrare Service Worker pentru PWA -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('SW ok'))
+        .catch(err => console.error('SW err:', err));
+    });
+  }
 </script>
 </body>
 </html>
