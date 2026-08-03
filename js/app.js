@@ -1,365 +1,51 @@
-const { useState, useEffect, useMemo, useCallback } = React;
-const h = React.createElement;
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-const VAT_RATE = 0.21;
-const GROSS_RATES = [190, 290, 310];
-const RATES = GROSS_RATES.map(r => Math.round((r / (1 + VAT_RATE)) * 100) / 100);
-const DAILY_TARGET = 1500;
-const BONUS_RATE = 0.31;
-const STORAGE_KEY = 'revizii_data_v2';
-
-function todayKey(d = new Date()) {
-  return d.toISOString().slice(0, 10);
-}
-function monthKey(d = new Date()) {
-  return d.toISOString().slice(0, 7);
-}
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return { days: {} };
-}
-function saveData(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
-}
-function countWorkdays(year, month, uptoDay) {
-  // month is 0-indexed
-  let count = 0;
-  const lastDay = uptoDay || new Date(year, month + 1, 0).getDate();
-  for (let d = 1; d <= lastDay; d++) {
-    const dow = new Date(year, month, d).getDay();
-    if (dow >= 1 && dow <= 5) count++;
-  }
-  return count;
-}
-function grossOf(netRate) {
-  const idx = RATES.indexOf(netRate);
-  return idx > -1 ? GROSS_RATES[idx] : Math.round(netRate * (1 + VAT_RATE));
-}
-function fmtRON(n) {
-  return new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' lei';
-}
-function dayLabel(key) {
-  const d = new Date(key + 'T00:00:00');
-  const days = ['Duminica','Luni','Marti','Miercuri','Joi','Vineri','Sambata'];
-  const months = ['ian','feb','mar','apr','mai','iun','iul','aug','sep','oct','nov','dec'];
-  return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+:root {
+  --accent: #0c447c;
+  --accent-light: #e6f1fb;
+  --accent-mid: #378add;
+  --ink: #1a1d1f;
+  --ink-soft: #5b6066;
+  --ink-faint: #8b9096;
+  --bg: #f4f5f6;
+  --surface: #ffffff;
+  --border: #e2e4e7;
+  --good: #0f6e56;
+  --good-bg: #e1f5ee;
+  --warn: #854f0b;
+  --warn-bg: #faeeda;
 }
 
-function App() {
-  const [data, setData] = useState(loadData);
-  const [now, setNow] = useState(new Date());
-  const [justAdded, setJustAdded] = useState(null);
-  const [showHistory, setShowHistory] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
-
-  useEffect(() => { saveData(data); }, [data]);
-
-  const tKey = todayKey(now);
-  const mKey = monthKey(now);
-
-  const todayEntries = data.days[tKey] || [];
-  const todaySum = todayEntries.reduce((a, b) => a + b, 0);
-  const todayCounts = RATES.reduce((acc, r) => {
-    acc[r] = todayEntries.filter(e => e === r).length;
-    return acc;
-  }, {});
-
-  const monthDays = useMemo(() => {
-    return Object.keys(data.days).filter(k => k.startsWith(mKey));
-  }, [data, mKey]);
-  const monthSum = monthDays.reduce((sum, k) => sum + (data.days[k] || []).reduce((a,b)=>a+b,0), 0);
-
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const totalWorkdaysInMonth = countWorkdays(year, month);
-  const workdaysSoFar = countWorkdays(year, month, now.getDate());
-  const monthlyTarget = totalWorkdaysInMonth * DAILY_TARGET;
-  const expectedSoFar = workdaysSoFar * DAILY_TARGET;
-
-  const monthProgress = monthlyTarget > 0 ? Math.min(100, (monthSum / monthlyTarget) * 100) : 0;
-  const todayProgress = Math.min(100, (todaySum / DAILY_TARGET) * 100);
-  const remainingToday = Math.max(0, DAILY_TARGET - todaySum);
-  const diffVsExpected = monthSum - expectedSoFar;
-
-  const addEntry = useCallback((rate) => {
-    setData(prev => {
-      const next = { ...prev, days: { ...prev.days } };
-      const arr = next.days[tKey] ? [...next.days[tKey]] : [];
-      arr.push(rate);
-      next.days[tKey] = arr;
-      return next;
-    });
-    setJustAdded(rate);
-    setTimeout(() => setJustAdded(null), 600);
-    if (navigator.vibrate) navigator.vibrate(10);
-  }, [tKey]);
-
-  const removeLastEntry = useCallback((rate) => {
-    setData(prev => {
-      const next = { ...prev, days: { ...prev.days } };
-      const arr = next.days[tKey] ? [...next.days[tKey]] : [];
-      const idx = arr.lastIndexOf(rate);
-      if (idx > -1) arr.splice(idx, 1);
-      next.days[tKey] = arr;
-      return next;
-    });
-  }, [tKey]);
-
-  const undoLastEntry = useCallback(() => {
-    setData(prev => {
-      const next = { ...prev, days: { ...prev.days } };
-      const arr = next.days[tKey] ? [...next.days[tKey]] : [];
-      if (arr.length === 0) return prev;
-      arr.pop();
-      next.days[tKey] = arr;
-      return next;
-    });
-    if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
-  }, [tKey]);
-
-  const monthDaysSorted = useMemo(() => {
-    return monthDays
-      .filter(k => (data.days[k] || []).length > 0)
-      .sort((a, b) => b.localeCompare(a));
-  }, [monthDays, data]);
-
-  const avgPerWorkday = workdaysSoFar > 0 ? monthSum / workdaysSoFar : 0;
-
-  const todayOverage = Math.max(0, todaySum - DAILY_TARGET);
-  const todayBonus = todayOverage * BONUS_RATE;
-  const monthOverage = Math.max(0, monthSum - monthlyTarget);
-  const monthBonus = monthOverage * BONUS_RATE;
-
-  return h('div', { style: { maxWidth: 480, margin: '0 auto', padding: '20px 16px' } },
-    // Header
-    h('div', { style: { marginBottom: 20 } },
-      h('div', { style: { fontSize: 13, color: 'var(--ink-faint)', fontWeight: 500, marginBottom: 2 } }, 'E.ON Asist Complet'),
-      h('div', { style: { fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em' } }, 'Revizii si verificari gaz'),
-      h('div', { style: { fontSize: 14, color: 'var(--ink-soft)', marginTop: 2 } }, dayLabel(tKey))
-    ),
-
-    // Today card
-    h('div', {
-      style: {
-        background: 'var(--surface)', borderRadius: 16, padding: '20px',
-        border: '1px solid var(--border)', marginBottom: 14
-      }
-    },
-      h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
-        h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Azi'),
-        h('span', { style: { fontSize: 13, color: 'var(--ink-faint)' } }, `tinta ${fmtRON(DAILY_TARGET)}`)
-      ),
-      h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 } },
-        h('span', { style: { fontSize: 40, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' } }, fmtRON(todaySum).replace(' lei','')),
-        h('span', { style: { fontSize: 18, color: 'var(--ink-faint)', fontWeight: 500 } }, 'lei')
-      ),
-      h('div', {
-        style: {
-          height: 10, background: 'var(--bg)', borderRadius: 6, overflow: 'hidden', marginBottom: 10
-        }
-      },
-        h('div', {
-          style: {
-            height: '100%', width: todayProgress + '%',
-            background: todayProgress >= 100 ? 'var(--good)' : 'var(--accent-mid)',
-            borderRadius: 6, transition: 'width 0.4s ease'
-          }
-        })
-      ),
-      h('div', { style: { fontSize: 14, color: todayProgress >= 100 ? 'var(--good)' : 'var(--ink-soft)', fontWeight: 500 } },
-        todayProgress >= 100
-          ? `Tinta atinsa. Peste target cu ${fmtRON(todayOverage)}.`
-          : `Mai ai nevoie de ${fmtRON(remainingToday)}.`
-      ),
-      todayOverage > 0 && h('div', {
-        style: {
-          marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          background: 'var(--accent-light)', borderRadius: 10, padding: '10px 12px'
-        }
-      },
-        h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 500 } }, 'Bonus 31% azi'),
-        h('span', { style: { fontSize: 16, fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' } }, fmtRON(todayBonus))
-      )
-    ),
-
-    // Rate buttons
-    h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 6 } },
-      RATES.map((rate, i) =>
-        h('button', {
-          key: rate,
-          onClick: () => addEntry(rate),
-          style: {
-            background: justAdded === rate ? 'var(--accent)' : 'var(--surface)',
-            color: justAdded === rate ? '#fff' : 'var(--ink)',
-            border: '1px solid ' + (justAdded === rate ? 'var(--accent)' : 'var(--border)'),
-            borderRadius: 14, padding: '18px 8px',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-            fontFamily: 'inherit', cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            transform: justAdded === rate ? 'scale(0.96)' : 'scale(1)'
-          }
-        },
-          h('span', { style: { fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' } }, GROSS_RATES[i]),
-          h('span', { style: { fontSize: 11, opacity: 0.75, fontWeight: 500 } }, 'lei cu TVA'),
-          h('span', {
-            style: {
-              fontSize: 11, fontWeight: 500, fontVariantNumeric: 'tabular-nums',
-              color: justAdded === rate ? 'rgba(255,255,255,0.85)' : 'var(--ink-faint)'
-            }
-          }, `fara TVA: ${rate.toFixed(2)}`),
-          todayCounts[rate] > 0 && h('span', {
-            style: {
-              marginTop: 2, fontSize: 12, fontWeight: 600,
-              background: justAdded === rate ? 'rgba(255,255,255,0.25)' : 'var(--accent-light)',
-              color: justAdded === rate ? '#fff' : 'var(--accent)',
-              borderRadius: 20, padding: '2px 8px'
-            }
-          }, `x${todayCounts[rate]}`)
-        )
-      )
-    ),
-    h('div', { style: { fontSize: 11, color: 'var(--ink-faint)', textAlign: 'center', marginBottom: 14 } },
-      'Toate calculele de mai sus (tinta, luna, bonus) sunt fara TVA'
-    ),
-
-    // Undo last entry - prominent, single action
-    todayEntries.length > 0 && h('button', {
-      onClick: undoLastEntry,
-      style: {
-        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-        fontSize: 13, fontWeight: 500, color: 'var(--warn)', background: 'var(--warn-bg)',
-        border: 'none', borderRadius: 12, padding: '10px 12px',
-        fontFamily: 'inherit', cursor: 'pointer', marginBottom: 12
-      }
-    }, `Anuleaza ultima verificare adaugata (${grossOf(todayEntries[todayEntries.length - 1])} lei)`),
-
-    // Per-rate undo - only show if today has multiple types
-    todayEntries.length > 0 && h('div', {
-      style: { display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }
-    },
-      RATES.filter(r => todayCounts[r] > 0).map(rate =>
-        h('button', {
-          key: 'undo-' + rate,
-          onClick: () => removeLastEntry(rate),
-          style: {
-            fontSize: 12, color: 'var(--ink-faint)', background: 'transparent',
-            border: '1px solid var(--border)', borderRadius: 20, padding: '6px 12px',
-            fontFamily: 'inherit', cursor: 'pointer'
-          }
-        }, `- o verificare de ${grossOf(rate)}`)
-      )
-    ),
-
-    // Month card
-    h('div', {
-      style: {
-        background: 'var(--surface)', borderRadius: 16, padding: '20px',
-        border: '1px solid var(--border)', marginBottom: 14
-      }
-    },
-      h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
-        h('span', { style: { fontSize: 13, fontWeight: 500, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.03em' } }, 'Luna aceasta'),
-        h('span', { style: { fontSize: 13, color: 'var(--ink-faint)' } }, `${workdaysSoFar}/${totalWorkdaysInMonth} zile lucratoare`)
-      ),
-      h('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 } },
-        h('span', { style: { fontSize: 28, fontWeight: 700, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' } }, fmtRON(monthSum)),
-        h('span', { style: { fontSize: 15, color: 'var(--ink-faint)' } }, `/ ${fmtRON(monthlyTarget)}`)
-      ),
-      h('div', {
-        style: { height: 10, background: 'var(--bg)', borderRadius: 6, overflow: 'hidden', marginTop: 10, marginBottom: 12 }
-      },
-        h('div', {
-          style: {
-            height: '100%', width: monthProgress + '%',
-            background: 'var(--accent)', borderRadius: 6, transition: 'width 0.4s ease'
-          }
-        })
-      ),
-      h('div', {
-        style: {
-          display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500,
-          color: diffVsExpected >= 0 ? 'var(--good)' : 'var(--warn)',
-          background: diffVsExpected >= 0 ? 'var(--good-bg)' : 'var(--warn-bg)',
-          borderRadius: 10, padding: '8px 12px'
-        }
-      },
-        diffVsExpected >= 0
-          ? `Esti in avans cu ${fmtRON(diffVsExpected)} fata de ritmul necesar.`
-          : `Esti in urma cu ${fmtRON(Math.abs(diffVsExpected))} fata de ritmul necesar.`
-      ),
-      h('div', { style: { marginTop: 12, fontSize: 13, color: 'var(--ink-faint)' } },
-        `Medie ${fmtRON(avgPerWorkday)} / zi lucratoare`
-      ),
-      monthOverage > 0 && h('div', {
-        style: {
-          marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          background: 'var(--accent-light)', borderRadius: 10, padding: '10px 12px'
-        }
-      },
-        h('span', { style: { fontSize: 13, color: 'var(--accent)', fontWeight: 500 } }, 'Bonus 31% luna asta'),
-        h('span', { style: { fontSize: 16, fontWeight: 700, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' } }, fmtRON(monthBonus))
-      )
-    ),
-
-    // History toggle
-    h('button', {
-      onClick: () => setShowHistory(s => !s),
-      style: {
-        width: '100%', background: 'transparent', border: 'none',
-        color: 'var(--accent)', fontSize: 14, fontWeight: 500, fontFamily: 'inherit',
-        cursor: 'pointer', padding: '10px 0', textAlign: 'center'
-      }
-    }, showHistory ? 'Ascunde istoric' : 'Vezi istoric zilnic'),
-
-    showHistory && h('div', { style: { marginTop: 4 } },
-      monthDaysSorted.length === 0
-        ? h('div', { style: { textAlign: 'center', color: 'var(--ink-faint)', fontSize: 14, padding: 20 } }, 'Nicio inregistrare inca luna asta.')
-        : monthDaysSorted.map(key => {
-            const entries = data.days[key];
-            const sum = entries.reduce((a,b) => a+b, 0);
-            const counts = RATES.reduce((acc, r) => { acc[r] = entries.filter(e => e === r).length; return acc; }, {});
-            return h('div', {
-              key,
-              style: {
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 12, padding: '12px 16px', marginBottom: 8,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-              }
-            },
-              h('div', null,
-                h('div', { style: { fontSize: 14, fontWeight: 500 } }, dayLabel(key)),
-                h('div', { style: { fontSize: 12, color: 'var(--ink-faint)', marginTop: 2 } },
-                  RATES.filter(r => counts[r] > 0).map(r => `${counts[r]}x${grossOf(r)}`).join('  ')
-                )
-              ),
-              h('div', { style: { fontSize: 16, fontWeight: 600, fontVariantNumeric: 'tabular-nums' } }, fmtRON(sum))
-            );
-          })
-    ),
-
-    // Reset (small, out of the way)
-    h('div', { style: { marginTop: 30, textAlign: 'center' } },
-      !confirmReset
-        ? h('button', {
-            onClick: () => setConfirmReset(true),
-            style: { background: 'none', border: 'none', color: 'var(--ink-faint)', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }
-          }, 'Sterge toate datele')
-        : h('div', { style: { display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' } },
-            h('span', { style: { fontSize: 12, color: 'var(--warn)' } }, 'Sigur?'),
-            h('button', {
-              onClick: () => { setData({ days: {} }); setConfirmReset(false); },
-              style: { background: 'none', border: 'none', color: 'var(--warn)', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }
-            }, 'Da, sterge'),
-            h('button', {
-              onClick: () => setConfirmReset(false),
-              style: { background: 'none', border: 'none', color: 'var(--ink-faint)', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }
-            }, 'Anuleaza')
-          )
-    )
-  );
+[data-theme="dark"] {
+  --accent: #4a9eef;
+  --accent-light: #16324d;
+  --accent-mid: #378add;
+  --ink: #f0f1f2;
+  --ink-soft: #b8bcc0;
+  --ink-faint: #7d8388;
+  --bg: #131518;
+  --surface: #1e2124;
+  --border: #33373b;
+  --good: #3ddba8;
+  --good-bg: #133d32;
+  --warn: #f5b95c;
+  --warn-bg: #3d2f14;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: contain;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+#root {
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+::-webkit-scrollbar { display: none; }
