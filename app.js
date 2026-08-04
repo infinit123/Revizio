@@ -10,7 +10,7 @@
   const h = React.createElement;
 
   // ------------------------------------------------------------------------
-  // Constants (business rules — unchanged from original)
+  // Constants
   // ------------------------------------------------------------------------
   const VAT_RATE = 0.21;
   const GROSS_RATES = [190, 290, 310];
@@ -21,9 +21,7 @@
   const USERS_KEY = 'eon_app_users';
 
   // ------------------------------------------------------------------------
-  // Safe storage helpers — guards against corruption, incomplete writes,
-  // and invalid JSON. Uses a write-to-temp-key-then-swap pattern where
-  // possible, and always validates shape before accepting data.
+  // Safe storage & Validation helpers
   // ------------------------------------------------------------------------
   function isValidDataShape(obj) {
     return !!obj && typeof obj === 'object' && obj.days && typeof obj.days === 'object';
@@ -34,8 +32,6 @@
       localStorage.setItem(key, value);
       return true;
     } catch (e) {
-      // Storage full or unavailable (e.g. private browsing). Fail silently
-      // but do not throw — the app should keep working with in-memory state.
       console.error('Storage write failed:', e);
       return false;
     }
@@ -78,17 +74,31 @@
   }
 
   // ------------------------------------------------------------------------
-  // Date / formatting helpers (unchanged)
+  // Date / formatting helpers
   // ------------------------------------------------------------------------
   function todayKey(d = new Date()) {
-    return d.toISOString().slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
   function monthKey(d = new Date()) {
-    return d.toISOString().slice(0, 7);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
   }
-  function countWorkdays(year, month, uptoDay) {
+  function countWorkdays(year, month) {
     let count = 0;
-    const lastDay = uptoDay || new Date(year, month + 1, 0).getDate();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= lastDay; d++) {
+      const dow = new Date(year, month, d).getDay();
+      if (dow >= 1 && dow <= 5) count++;
+    }
+    return count;
+  }
+  function countWorkdaysSoFar(year, month, uptoDay) {
+    let count = 0;
+    const lastDay = Math.min(uptoDay, new Date(year, month + 1, 0).getDate());
     for (let d = 1; d <= lastDay; d++) {
       const dow = new Date(year, month, d).getDay();
       if (dow >= 1 && dow <= 5) count++;
@@ -197,7 +207,7 @@
   }
 
   // ------------------------------------------------------------------------
-  // Data management tab (export / import / reset)
+  // Data Management Tab (Export Native / Web Share / Import with Rollback)
   // ------------------------------------------------------------------------
   function DataTab({ data, setData }) {
     const [statusMsg, setStatusMsg] = useState(null);
@@ -209,20 +219,62 @@
     const showStatus = (type, text) => {
       setStatusMsg({ type, text });
       if (statusTimer.current) clearTimeout(statusTimer.current);
-      statusTimer.current = setTimeout(() => setStatusMsg(null), 3000);
+      statusTimer.current = setTimeout(() => setStatusMsg(null), 3500);
     };
 
-    const handleExport = () => {
+    const handleExport = async () => {
       try {
-        const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute('href', jsonString);
-        downloadAnchor.setAttribute('download', `backup_revizii_${todayKey()}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-        showStatus('success', 'Backup salvat!');
+        const now = new Date();
+        const dateStr = todayKey(now);
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const filename = `backup_revizii_${dateStr}_${hours}-${minutes}.json`;
+        const jsonContent = JSON.stringify(data, null, 2);
+
+        // 1. File System Access API (Desktop/Mobile Chrome moderne)
+        if ('showSaveFilePicker' in window) {
+          try {
+            const handle = await window.showSaveFilePicker({
+              suggestedName: filename,
+              types: [{
+                description: 'JSON Backup File',
+                accept: { 'application/json': ['.json'] }
+              }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(jsonContent);
+            await writable.close();
+            showStatus('success', 'Backup salvat cu succes!');
+            return;
+          } catch (err) {
+            if (err.name === 'AbortError') return; // utilizatorul a anulat
+          }
+        }
+
+        // 2. Web Share API (Safari iOS / Android)
+        const file = new File([jsonContent], filename, { type: 'application/json' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'Backup Revizii Gaz',
+            files: [file]
+          });
+          showStatus('success', 'Backup exportat!');
+          return;
+        }
+
+        // 3. Fallback clasic anchor download
+        const blob = new Blob([jsonContent], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showStatus('success', 'Backup descărcat!');
       } catch (err) {
+        console.error('Export failed:', err);
         showStatus('error', 'Nu s-a putut genera backup-ul.');
       }
     };
@@ -230,35 +282,44 @@
     const handleImport = (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const fileReader = new FileReader();
-      fileReader.readAsText(file, 'UTF-8');
-      fileReader.onload = (event) => {
+
+      const previousState = { ...data };
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
         try {
           const parsed = JSON.parse(event.target.result);
           if (isValidDataShape(parsed)) {
             setData(parsed);
             showStatus('success', 'Date importate cu succes!');
           } else {
-            showStatus('error', 'Fișier JSON invalid.');
+            throw new Error('Structură JSON necorespunzătoare.');
           }
         } catch (err) {
-          showStatus('error', 'Eroare la citirea fișierului.');
+          console.error('Import error, performing rollback:', err);
+          setData(previousState);
+          showStatus('error', 'Fișier invalid! Modificările au fost anulate.');
         }
       };
-      fileReader.onerror = () => showStatus('error', 'Eroare la citirea fișierului.');
-      // reset input so selecting the same file again re-triggers onChange
+
+      reader.onerror = () => {
+        setData(previousState);
+        showStatus('error', 'Eroare la citirea fișierului. Stare restaurată.');
+      };
+
+      reader.readAsText(file, 'UTF-8');
       e.target.value = '';
     };
 
     return h('div', { className: 'fade-in', style: { display: 'flex', flexDirection: 'column', gap: 14 } },
       h('div', { className: 'card', style: { padding: 20 } },
         h('h3', { style: { margin: '0 0 6px 0', fontSize: 16 } }, 'Exportă Datele'),
-        h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 14px 0' } }, 'Descarcă un backup JSON pe telefon/PC.'),
-        h('button', { onClick: handleExport, className: 'btn-tap', style: { width: '100%', padding: 12, borderRadius: 12, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' } }, 'Descarcă Backup (.json)')
+        h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 14px 0' } }, 'Salvează backup-ul nativ pe telefon sau în PC.'),
+        h('button', { onClick: handleExport, className: 'btn-tap', style: { width: '100%', padding: 12, borderRadius: 12, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' } }, '💾 Salvează Backup (.json)')
       ),
       h('div', { className: 'card', style: { padding: 20 } },
         h('h3', { style: { margin: '0 0 6px 0', fontSize: 16 } }, 'Importă Datele'),
-        h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 14px 0' } }, 'Încarcă un backup salvat anterior.'),
+        h('p', { style: { fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 14px 0' } }, 'Încarcă un backup anterior (cu verificare de siguranță).'),
         h('label', { className: 'btn-tap', style: { display: 'block', width: '100%', padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink)', fontWeight: 600, fontSize: 14, textAlign: 'center', cursor: 'pointer' } },
           'Alege Fișier Backup',
           h('input', { type: 'file', accept: '.json,application/json', onChange: handleImport, style: { display: 'none' } })
@@ -278,7 +339,7 @@
   }
 
   // ------------------------------------------------------------------------
-  // Main dashboard
+  // Main Dashboard Component
   // ------------------------------------------------------------------------
   function MainDashboard({ data, setData }) {
     const [now] = useState(new Date());
@@ -305,7 +366,7 @@
     const year = now.getFullYear();
     const month = now.getMonth();
     const totalWorkdaysInMonth = countWorkdays(year, month);
-    const workdaysSoFar = countWorkdays(year, month, now.getDate());
+    const workdaysSoFar = countWorkdaysSoFar(year, month, now.getDate());
     const monthlyTarget = totalWorkdaysInMonth * DAILY_TARGET;
     const expectedSoFar = workdaysSoFar * DAILY_TARGET;
 
@@ -354,7 +415,6 @@
 
     const avgPerWorkday = workdaysSoFar > 0 ? monthSum / workdaysSoFar : 0;
     const todayOverage = Math.max(0, todaySum - DAILY_TARGET);
-    const todayBonus = todayOverage * BONUS_RATE;
 
     return h('div', { className: 'fade-in' },
       // AZI Card
@@ -372,10 +432,6 @@
         ),
         h('div', { style: { fontSize: 13, color: 'var(--ink-soft)', fontWeight: 500 } },
           todayProgress >= 100 ? `Țintă atinsă. Peste target cu ${fmtRON(todayOverage)}.` : `Mai ai nevoie de ${fmtRON(remainingToday)}.`
-        ),
-        todayOverage > 0 && h('div', { style: { marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--accent-light)', borderRadius: 10, padding: '8px 12px' } },
-          h('span', { style: { fontSize: 12, color: 'var(--accent)', fontWeight: 600 } }, 'Bonus 31% azi'),
-          h('span', { style: { fontSize: 14, fontWeight: 700, color: 'var(--accent)' } }, fmtRON(todayBonus))
         )
       ),
 
@@ -479,6 +535,196 @@
   }
 
   // ------------------------------------------------------------------------
+  // Bonus & Calendar Tab + Modal Editare Zi
+  // ------------------------------------------------------------------------
+  function BonusCalendarTab({ data, setData }) {
+    const [viewDate, setViewDate] = useState(() => new Date());
+    const [selectedDayKey, setSelectedDayKey] = useState(null);
+    const [customValInput, setCustomValInput] = useState('');
+    const ripple = useRipple();
+
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+
+    const monthNames = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+
+    // Calcule lunare specifice lunii selectate în calendar
+    const currentMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const monthDaysKeys = useMemo(() => Object.keys(data.days).filter(k => k.startsWith(currentMonthPrefix)), [data, currentMonthPrefix]);
+    const totalMonthSumNet = useMemo(() => monthDaysKeys.reduce((acc, k) => acc + (data.days[k] || []).reduce((a, b) => a + b, 0), 0), [data, monthDaysKeys]);
+
+    const totalWorkdaysInMonth = countWorkdays(year, month);
+    const monthlyTargetNet = totalWorkdaysInMonth * DAILY_TARGET;
+    const monthlyExceedNet = Math.max(0, totalMonthSumNet - monthlyTargetNet);
+    const monthlyBonusNet = monthlyExceedNet * BONUS_RATE;
+
+    // Generare rețea calendar
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; // Luni = 0
+
+    const calendarGrid = useMemo(() => {
+      const cells = [];
+      for (let i = 0; i < firstDayIndex; i++) {
+        cells.push(null);
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dStr = String(d).padStart(2, '0');
+        const mStr = String(month + 1).padStart(2, '0');
+        const key = `${year}-${mStr}-${dStr}`;
+        const dayEntries = data.days[key] || [];
+        const daySum = dayEntries.reduce((a, b) => a + b, 0);
+        const dayOfWeek = new Date(year, month, d).getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        cells.push({ day: d, key, daySum, count: dayEntries.length, isWeekend });
+      }
+      return cells;
+    }, [year, month, daysInMonth, firstDayIndex, data]);
+
+    const changeMonth = (delta) => {
+      setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+    };
+
+    // Funcții editare zi în modal
+    const handleRemoveEntry = (key, idx) => {
+      setData(prev => {
+        const nextDays = { ...prev.days };
+        const arr = [...(nextDays[key] || [])];
+        arr.splice(idx, 1);
+        if (arr.length === 0) delete nextDays[key];
+        else nextDays[key] = arr;
+        return { ...prev, days: nextDays };
+      });
+      triggerHaptic(10);
+    };
+
+    const handleAddRateToDay = (key, rate) => {
+      setData(prev => {
+        const nextDays = { ...prev.days };
+        const arr = nextDays[key] ? [...nextDays[key]] : [];
+        arr.push(rate);
+        nextDays[key] = arr;
+        return { ...prev, days: nextDays };
+      });
+      triggerHaptic(10);
+    };
+
+    const handleAddCustomToDay = (e, key) => {
+      e.preventDefault();
+      const grossVal = parseFloat(customValInput);
+      if (isNaN(grossVal) || grossVal <= 0) return;
+      const netVal = Math.round((grossVal / (1 + VAT_RATE)) * 100) / 100;
+      handleAddRateToDay(key, netVal);
+      setCustomValInput('');
+    };
+
+    const selectedEntries = selectedDayKey ? (data.days[selectedDayKey] || []) : [];
+    const selectedSum = selectedEntries.reduce((a, b) => a + b, 0);
+
+    return h('div', { className: 'fade-in' },
+      // Card Sumar Bonus Lunar
+      h('div', { className: 'card', style: { padding: 20, marginBottom: 16 } },
+        h('div', { style: { fontSize: 13, fontWeight: 700, color: 'var(--ink-soft)', letterSpacing: '0.04em', marginBottom: 6 } }, `BONUS LUNAR — ${monthNames[month].toUpperCase()} ${year}`),
+        h('div', { style: { fontSize: 32, fontWeight: 800, color: monthlyBonusNet > 0 ? 'var(--good)' : 'var(--ink)', marginBottom: 8 } }, fmtRON(monthlyBonusNet)),
+        h('div', { style: { fontSize: 13, color: 'var(--ink-soft)', display: 'flex', flexDirection: 'column', gap: 4 } },
+          h('div', null, `Total fără TVA: ${fmtRON(totalMonthSumNet)}`),
+          h('div', null, `Țintă lună (${totalWorkdaysInMonth} zile lucr.): ${fmtRON(monthlyTargetNet)}`),
+          h('div', { style: { fontWeight: 600, color: monthlyExceedNet > 0 ? 'var(--good)' : 'var(--warn)' } },
+            monthlyExceedNet > 0 ? `Depășire target: +${fmtRON(monthlyExceedNet)} (Bonus 31%)` : `Rămas până la target: ${fmtRON(monthlyTargetNet - totalMonthSumNet)}`
+          )
+        )
+      ),
+
+      // Calendar Control / Header
+      h('div', { className: 'card', style: { padding: 16, marginBottom: 16 } },
+        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 } },
+          h('button', { onClick: () => changeMonth(-1), className: 'btn-tap', style: { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink)', fontWeight: 700, cursor: 'pointer' } }, '❮'),
+          h('span', { style: { fontSize: 16, fontWeight: 800 } }, `${monthNames[month]} ${year}`),
+          h('button', { onClick: () => changeMonth(1), className: 'btn-tap', style: { padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink)', fontWeight: 700, cursor: 'pointer' } }, '❯')
+        ),
+
+        // Headere zile ale săptămânii
+        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, textAlign: 'center', fontWeight: 700, fontSize: 11, color: 'var(--ink-faint)', marginBottom: 8 } },
+          ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => h('div', { key: i }, d))
+        ),
+
+        // Grid Zile
+        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 } },
+          calendarGrid.map((cell, idx) => {
+            if (!cell) return h('div', { key: `empty-${idx}` });
+            const isToday = cell.key === todayKey();
+            const isTargetMet = cell.daySum >= DAILY_TARGET;
+            return h('button', {
+              key: cell.key,
+              onClick: (e) => { ripple(e); setSelectedDayKey(cell.key); },
+              className: 'btn-tap',
+              style: {
+                minHeight: 52,
+                borderRadius: 10,
+                border: isToday ? '2px solid var(--accent)' : '1px solid var(--border)',
+                background: cell.daySum > 0 ? (isTargetMet ? 'var(--good-bg)' : 'var(--accent-light)') : (cell.isWeekend ? 'rgba(0,0,0,0.02)' : 'var(--surface)'),
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justify: 'center',
+                padding: '4px 2px',
+                cursor: 'pointer'
+              }
+            },
+              h('span', { style: { fontSize: 12, fontWeight: isToday ? 800 : 600, color: cell.isWeekend ? 'var(--ink-faint)' : 'var(--ink)' } }, cell.day),
+              cell.daySum > 0 && h('span', { style: { fontSize: 10, fontWeight: 700, color: isTargetMet ? 'var(--good)' : 'var(--accent)', marginTop: 2 } }, `${Math.round(cell.daySum)}l`),
+              cell.count > 0 && h('span', { style: { fontSize: 9, color: 'var(--ink-faint)' } }, `${cell.count} ver.`)
+            );
+          })
+        )
+      ),
+
+      // Modal Editare Zi Selectată
+      selectedDayKey && h('div', {
+        style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 },
+        onClick: (e) => { if (e.target === e.currentTarget) setSelectedDayKey(null); }
+      },
+        h('div', { className: 'card fade-in', style: { padding: 20, width: '100%', maxWidth: 360, maxHeight: '85vh', overflowY: 'auto' } },
+          h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 } },
+            h('h3', { style: { margin: 0, fontSize: 16 } }, dayLabel(selectedDayKey)),
+            h('button', { onClick: () => setSelectedDayKey(null), style: { background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--ink-soft)' } }, '✕')
+          ),
+          h('div', { style: { fontSize: 13, color: 'var(--ink-soft)', marginBottom: 14 } }, `Total zi: ${fmtRON(selectedSum)}`),
+
+          // Lista verificărilor existente în zi
+          selectedEntries.length === 0
+            ? h('div', { style: { fontSize: 13, color: 'var(--ink-faint)', textAlign: 'center', padding: '10px 0' } }, 'Nicio verificare înregistrată.')
+            : h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 } },
+                selectedEntries.map((rate, idx) =>
+                  h('div', { key: idx, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg)', padding: '8px 12px', borderRadius: 8, fontSize: 13 } },
+                    h('span', null, `${grossOf(rate)} lei (cu TVA)`),
+                    h('button', { onClick: () => handleRemoveEntry(selectedDayKey, idx), style: { background: 'none', border: 'none', color: 'var(--warn)', fontWeight: 700, cursor: 'pointer', padding: '2px 6px' } }, 'Șterge')
+                  )
+                )
+              ),
+
+          // Butoane adăugare rapidă tarif
+          h('div', { style: { fontSize: 12, fontWeight: 700, color: 'var(--ink-soft)', marginBottom: 8 } }, 'Adaugă verificare în această zi:'),
+          h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 } },
+            RATES.map((rate, i) =>
+              h('button', {
+                key: rate,
+                onClick: () => handleAddRateToDay(selectedDayKey, rate),
+                style: { padding: '8px 4px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', fontWeight: 700, fontSize: 12, cursor: 'pointer' }
+              }, `${GROSS_RATES[i]} lei`)
+            )
+          ),
+
+          // Adăugare sumă personalizată
+          h('form', { onSubmit: (e) => handleAddCustomToDay(e, selectedDayKey), style: { display: 'flex', gap: 6 } },
+            h('input', { type: 'number', step: 'any', inputMode: 'decimal', placeholder: 'Sumă cu TVA', value: customValInput, onChange: e => setCustomValInput(e.target.value), style: { flex: 1, padding: 8, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)', fontSize: 13 } }),
+            h('button', { type: 'submit', style: { padding: '8px 12px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' } }, '+')
+          )
+        )
+      )
+    );
+  }
+
+  // ------------------------------------------------------------------------
   // App Layout (drawer, header, tab routing)
   // ------------------------------------------------------------------------
   function AppLayout({ user, onLogout, theme, toggleTheme }) {
@@ -504,6 +750,12 @@
       return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
     }, []);
 
+    const getTabTitle = () => {
+      if (activeTab === 'main') return 'Pornire';
+      if (activeTab === 'bonus') return 'Bonus & Calendar';
+      return 'Gestiune Date';
+    };
+
     return h('div', { style: { maxWidth: 440, margin: '0 auto', padding: '16px 14px' } },
 
       // Sidebar Overlay
@@ -519,6 +771,11 @@
             onClick: () => { setActiveTab('main'); setIsDrawerOpen(false); },
             className: `nav-btn ${activeTab === 'main' ? 'active' : ''}`
           }, h('span', { style: { fontSize: 18 } }, '🏠'), h('span', null, 'Pornire')),
+
+          h('button', {
+            onClick: () => { setActiveTab('bonus'); setIsDrawerOpen(false); },
+            className: `nav-btn ${activeTab === 'bonus' ? 'active' : ''}`
+          }, h('span', { style: { fontSize: 18 } }, '📅'), h('span', null, 'Bonus & Calendar')),
 
           h('button', {
             onClick: () => { setActiveTab('data'); setIsDrawerOpen(false); },
@@ -565,11 +822,13 @@
           style: { width: 42, height: 42, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer', borderRadius: 12 },
           'aria-label': 'Deschide meniul'
         }, '☰'),
-        h('h1', { style: { margin: 0, fontSize: 22, fontWeight: 800 } }, activeTab === 'main' ? 'Pornire' : 'Gestiune Date')
+        h('h1', { style: { margin: 0, fontSize: 22, fontWeight: 800 } }, getTabTitle())
       ),
 
-      // Conținut
-      activeTab === 'main' ? h(MainDashboard, { data, setData }) : h(DataTab, { data, setData })
+      // Conținut tab-uri
+      activeTab === 'main' && h(MainDashboard, { data, setData }),
+      activeTab === 'bonus' && h(BonusCalendarTab, { data, setData }),
+      activeTab === 'data' && h(DataTab, { data, setData })
     );
   }
 
@@ -658,7 +917,6 @@
     useEffect(() => {
       document.documentElement.setAttribute('data-theme', theme);
       safeLocalStorageSet('revizii_theme', theme);
-      // keep the browser UI (status bar / task switcher chrome) in sync with theme
       const themeColorMeta = document.querySelector('meta[name="theme-color"]');
       if (themeColorMeta) {
         themeColorMeta.setAttribute('content', theme === 'dark' ? '#000000' : '#E2001A');
@@ -694,13 +952,12 @@
   if (loadingShell) loadingShell.remove();
 
   // ------------------------------------------------------------------------
-  // Service worker registration + update lifecycle
+  // Service worker registration
   // ------------------------------------------------------------------------
   if ('serviceWorker' in navigator && navigator.serviceWorker) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
         .then((reg) => {
-          // Check for waiting update periodically while app is open
           setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
         })
         .catch((err) => console.error('SW registration failed:', err));
