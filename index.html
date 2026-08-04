@@ -1,77 +1,208 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>E.ON Asist Complet - Revizii Gaz</title>
-<meta name="description" content="Evidența verificărilor și reviziilor gaz, calcul TVA și bonus, funcționare completă offline.">
-
-<!-- ============ Manifest & theme ============ -->
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#E2001A" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<meta name="color-scheme" content="light dark">
-
-<!-- ============ Favicons ============ -->
-<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png">
-<link rel="shortcut icon" href="./icons/favicon-32.png">
-
-<!-- ============ iOS / Apple PWA meta ============ -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="E.ON Revizii">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="format-detection" content="telephone=no">
-<meta name="HandheldFriendly" content="true">
-
-<link rel="apple-touch-icon" sizes="152x152" href="./icons/apple-touch-icon-152.png">
-<link rel="apple-touch-icon" sizes="167x167" href="./icons/apple-touch-icon-167.png">
-<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png">
-
-<!-- ============ iOS splash screens (apple-touch-startup-image) ============ -->
-<!-- iPhone SE / small -->
-<link rel="apple-touch-startup-image" href="./icons/splash-iphonese.png"
-  media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
-<!-- iPhone 13/14 class -->
-<link rel="apple-touch-startup-image" href="./icons/splash-iphone13.png"
-  media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
-<!-- iPhone 15/16 class -->
-<link rel="apple-touch-startup-image" href="./icons/splash-iphone15.png"
-  media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)">
-<!-- iPhone Pro Max class -->
-<link rel="apple-touch-startup-image" href="./icons/splash-iphonemax.png"
-  media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)">
-<!-- iPad -->
-<link rel="apple-touch-startup-image" href="./icons/splash-ipad.png"
-  media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2)">
-<!-- iPad Pro 11 -->
-<link rel="apple-touch-startup-image" href="./icons/splash-ipadpro11.png"
-  media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)">
-<!-- iPad Pro 12.9 -->
-<link rel="apple-touch-startup-image" href="./icons/splash-ipadpro129.png"
-  media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)">
-
-<!-- ============ Performance hints ============ -->
-<link rel="preload" href="./vendor/react.production.min.js" as="script">
-<link rel="preload" href="./vendor/react-dom.production.min.js" as="script">
-<link rel="preload" href="./app.js" as="script">
-<link rel="preload" href="./styles.css" as="style">
-
-<link rel="stylesheet" href="./styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Revizio PWA</title>
+    <meta name="theme-color" content="#1e293b">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="dark-theme">
+    <div id="app" class="app-container">
+        <!-- Top App Bar -->
+        <header class="top-bar">
+            <button id="menu-btn" class="icon-btn" aria-label="Meniu"><i class="fas fa-bars"></i></button>
+            <h1 id="page-title">Dashboard</h1>
+            <button id="theme-toggle" class="icon-btn" aria-label="Schimbă Tema"><i class="fas fa-sun"></i></button>
+        </header>
 
-<!-- Instant loading shell shown before React hydrates -->
-<div id="app-loading-shell" class="app-loading-shell">
-  <div class="app-loading-badge">e.on</div>
-</div>
+        <!-- Navigation Drawer / Sidebar -->
+        <div id="drawer-overlay" class="drawer-overlay"></div>
+        <aside id="drawer" class="drawer">
+            <div class="drawer-header">
+                <h2>Revizio</h2>
+                <button id="close-drawer" class="icon-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <nav class="drawer-nav">
+                <button class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </button>
+                <button class="nav-item" data-page="bonus-calendar">
+                    <i class="fas fa-calendar-alt"></i> Bonus & Calendar
+                </button>
+                <button class="nav-item" data-page="history">
+                    <i class="fas fa-history"></i> Istoric
+                </button>
+                <button class="nav-item" data-page="backup">
+                    <i class="fas fa-database"></i> Backup & Restaurare
+                </button>
+            </nav>
+        </aside>
 
-<div id="root"></div>
+        <!-- Main Content Area -->
+        <main class="content-area">
+            <!-- PAGE 1: DASHBOARD -->
+            <section id="page-dashboard" class="page active">
+                <!-- Direct Registration Form -->
+                <div class="card">
+                    <h3>Inregistrare Verificare</h3>
+                    <form id="entry-form" class="form-grid">
+                        <div class="form-group">
+                            <label for="entry-type">Tip Lucrare</label>
+                            <select id="entry-type" required>
+                                <option value="MRV">MRV (Montator)</option>
+                                <option value="ORV">ORV (Operator)</option>
+                                <option value="Custom">Valoare Personalizata</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="custom-val-group" style="display: none;">
+                            <label for="entry-amount">Suma (RON fără TVA)</label>
+                            <input type="number" id="entry-amount" step="0.01" placeholder="0.00">
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adaugă</button>
+                    </form>
+                </div>
 
-<script src="./vendor/react.production.min.js"></script>
-<script src="./vendor/react-dom.production.min.js"></script>
-<script src="./app.js" defer></script>
+                <!-- Daily & Monthly Progress Bar Cards -->
+                <div class="metrics-grid">
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span>Progres Zilnic</span>
+                            <span id="dash-daily-total">0 RON</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div id="dash-daily-progress" class="progress-bar-fill" style="width: 0%;"></div>
+                        </div>
+                        <div class="metric-footer">
+                            <small id="dash-daily-count">0 verificări azi</small>
+                            <small>Target: 1500 RON</small>
+                        </div>
+                    </div>
 
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span>Progres Lunar</span>
+                            <span id="dash-monthly-total">0 RON</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div id="dash-monthly-progress" class="progress-bar-fill" style="width: 0%;"></div>
+                        </div>
+                        <div class="metric-footer">
+                            <small id="dash-monthly-count">0 verificări luna aceasta</small>
+                            <small id="dash-monthly-target-lbl">Target: 0 RON</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Daily Entries -->
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h3>Activitate Azi</h3>
+                        <button id="go-to-history" class="btn btn-secondary btn-sm">Vezi istoric zilnic</button>
+                    </div>
+                    <ul id="dash-today-list" class="data-list"></ul>
+                </div>
+            </section>
+
+            <!-- PAGE 2: BONUS & CALENDAR -->
+            <section id="page-bonus-calendar" class="page">
+                <!-- Bonus Card -->
+                <div class="card bonus-card">
+                    <h3>Calcul Bonus Lunar (31%)</h3>
+                    <div class="bonus-grid">
+                        <div class="bonus-item">
+                            <span>Target Lunar</span>
+                            <strong id="bonus-target-lunar">0 RON</strong>
+                        </div>
+                        <div class="bonus-item">
+                            <span>Total Realizat</span>
+                            <strong id="bonus-total-realizat">0 RON</strong>
+                        </div>
+                        <div class="bonus-item">
+                            <span>Diferență Target</span>
+                            <strong id="bonus-diferenta">0 RON</strong>
+                        </div>
+                        <div class="bonus-item highlight">
+                            <span>Bonus Estimat (31%)</span>
+                            <strong id="bonus-estimat">0 RON</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Section -->
+                <div class="card">
+                    <div class="calendar-header">
+                        <button id="cal-prev" class="icon-btn"><i class="fas fa-chevron-left"></i></button>
+                        <h3 id="cal-month-year">Luna An</h3>
+                        <button id="cal-next" class="icon-btn"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <div>Lu</div><div>Ma</div><div>Mi</div><div>Jo</div><div>Vi</div><div>Sâ</div><div>Du</div>
+                    </div>
+                    <div id="calendar-days" class="calendar-days-grid"></div>
+                </div>
+            </section>
+
+            <!-- PAGE 3: HISTORY -->
+            <section id="page-history" class="page">
+                <div class="card">
+                    <h3>Istoric Înregistrări</h3>
+                    <div id="history-container" class="history-container"></div>
+                </div>
+            </section>
+
+            <!-- PAGE 4: BACKUP & RESTORE -->
+            <section id="page-backup" class="page">
+                <div class="card">
+                    <h3>Export Backup</h3>
+                    <p>Salvează datele locale într-un fișier JSON securizat.</p>
+                    <button id="btn-export" class="btn btn-primary"><i class="fas fa-download"></i> Export Backup</button>
+                </div>
+                <div class="card">
+                    <h3>Import Backup</h3>
+                    <p>Restaurează datele dintr-un fișier JSON anterior. Se va crea un backup temporar automat înainte de restaurare.</p>
+                    <button id="btn-import" class="btn btn-warning"><i class="fas fa-upload"></i> Alege fișier backup</button>
+                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Edit Day Modal -->
+    <div id="day-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-date-title">Editare Zi</h3>
+                <button id="close-modal" class="icon-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="modal-add-form" class="form-grid">
+                    <div class="form-group">
+                        <label>Tip Lucrare</label>
+                        <select id="modal-entry-type">
+                            <option value="MRV">MRV</option>
+                            <option value="ORV">ORV</option>
+                            <option value="Custom">Valoare Personalizata</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="modal-custom-val-group" style="display:none;">
+                        <label>Suma (RON)</label>
+                        <input type="number" id="modal-entry-amount" step="0.01">
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Adaugă</button>
+                </form>
+                <hr>
+                <h4>Înregistrări pe zi (<span id="modal-day-count">0</span>) - Total: <span id="modal-day-total">0 RON</span></h4>
+                <ul id="modal-day-list" class="data-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
 </body>
 </html>
