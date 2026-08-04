@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>E.ON Asist Complet - Revizii Gaz</title>
+<meta name="description" content="Evidența verificărilor și reviziilor gaz, calcul TVA și bonus, funcționare completă offline.">
+
+<!-- ============ Manifest & theme ============ -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#E2001A" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+
+<!-- ============ Favicons ============ -->
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png">
+<link rel="shortcut icon" href="./icons/favicon-32.png">
+
+<!-- ============ iOS / Apple PWA meta ============ -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="E.ON Revizii">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<meta name="HandheldFriendly" content="true">
+
+<link rel="apple-touch-icon" sizes="152x152" href="./icons/apple-touch-icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="./icons/apple-touch-icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png">
+
+<!-- ============ iOS splash screens (apple-touch-startup-image) ============ -->
+<!-- iPhone SE / small -->
+<link rel="apple-touch-startup-image" href="./icons/splash-iphonese.png"
+  media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+<!-- iPhone 13/14 class -->
+<link rel="apple-touch-startup-image" href="./icons/splash-iphone13.png"
+  media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+<!-- iPhone 15/16 class -->
+<link rel="apple-touch-startup-image" href="./icons/splash-iphone15.png"
+  media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)">
+<!-- iPhone Pro Max class -->
+<link rel="apple-touch-startup-image" href="./icons/splash-iphonemax.png"
+  media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)">
+<!-- iPad -->
+<link rel="apple-touch-startup-image" href="./icons/splash-ipad.png"
+  media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2)">
+<!-- iPad Pro 11 -->
+<link rel="apple-touch-startup-image" href="./icons/splash-ipadpro11.png"
+  media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)">
+<!-- iPad Pro 12.9 -->
+<link rel="apple-touch-startup-image" href="./icons/splash-ipadpro129.png"
+  media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)">
+
+<!-- ============ Performance hints ============ -->
+<link rel="preload" href="./vendor/react.production.min.js" as="script">
+<link rel="preload" href="./vendor/react-dom.production.min.js" as="script">
+<link rel="preload" href="./app.js" as="script">
+<link rel="preload" href="./styles.css" as="style">
+
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<!-- Instant loading shell shown before React hydrates -->
+<div id="app-loading-shell" class="app-loading-shell">
+  <div class="app-loading-badge">e.on</div>
+</div>
+
+<div id="root"></div>
+
+<script src="./vendor/react.production.min.js"></script>
+<script src="./vendor/react-dom.production.min.js"></script>
+<script src="./app.js" defer></script>
+
+</body>
+</html>
