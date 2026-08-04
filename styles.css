@@ -25,7 +25,7 @@
   --warn: #8a5300;
   --warn-bg: #fdf6ea;
 
-  /* iOS safe area insets, with fallback */
+  /* iOS safe area insets */
   --sat: env(safe-area-inset-top, 0px);
   --sar: env(safe-area-inset-right, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
@@ -52,7 +52,6 @@
 
 html {
   height: 100%;
-  /* Prevent accidental zoom on double-tap while still allowing pinch-zoom gestures at the OS level */
   touch-action: manipulation;
 }
 
@@ -66,15 +65,13 @@ html, body {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overscroll-behavior-y: none; /* prevent iOS/Android pull-to-refresh + rubber-band bounce */
+  overscroll-behavior-y: none;
   overflow-x: hidden;
 }
 
 body {
-  /* Prevent accidental text selection during taps/swipes, inputs remain selectable explicitly */
   -webkit-user-select: none;
   user-select: none;
-  /* Fluid native-like scrolling on iOS */
   -webkit-overflow-scrolling: touch;
 }
 
@@ -95,7 +92,7 @@ input, textarea {
 ::-webkit-scrollbar { display: none; }
 
 /* ==========================================================================
-   Loading shell (shown before React hydrates)
+   Loading shell
    ========================================================================== */
 .app-loading-shell {
   position: fixed;
@@ -166,7 +163,7 @@ input, textarea {
   }
 }
 
-/* Fade-in for content transitions */
+/* Fade-in animation */
 .fade-in {
   animation: fade-in-anim 0.2s ease;
 }
