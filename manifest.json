@@ -1,16 +1,21 @@
 {
-  "short_name": "E.ON Revizii",
-  "name": "E.ON Asist - Revizii Gaz",
+  "short_name": "Revizii",
+  "name": "E.ON Asist Complet - Revizii Gaz",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23E2001A'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='180' fill='white'>e.on</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%23E2001A'/><text x='50%' y='58%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='68' fill='white'>e.on</text></svg>",
       "type": "image/svg+xml",
-      "sizes": "192x192 512x512",
-      "purpose": "any maskable"
+      "sizes": "192x192"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%23E2001A'/><text x='50%' y='58%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='180' fill='white'>e.on</text></svg>",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
     }
   ],
   "start_url": "./index.html",
-  "background_color": "#f8f9fa",
+  "background_color": "#f2f2f7",
   "theme_color": "#E2001A",
-  "display": "standalone"
+  "display": "standalone",
+  "orientation": "portrait"
 }
