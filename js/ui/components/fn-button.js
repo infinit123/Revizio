@@ -24,11 +24,6 @@ export class FnButton extends HTMLElement {
     if (!btn) return;
 
     btn.addEventListener('touchstart', () => Haptics.selection(), { passive: true });
-    btn.addEventListener('click', (e) => {
-      if (this.hasAttribute('disabled')) {
-        e.stopImmediatePropagation();
-      }
-    });
   }
 
   render() {
@@ -51,20 +46,18 @@ export class FnButton extends HTMLElement {
           padding: 14px 20px;
           border-radius: var(--fn-radius-m, 12px);
           font-family: inherit;
-          font-size: 17px;
+          font-size: 16px;
           font-weight: 600;
-          letter-spacing: -0.4px;
+          letter-spacing: -0.3px;
           border: none;
           outline: none;
           cursor: pointer;
-          user-select: none;
-          -webkit-tap-highlight-color: transparent;
-          transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.15s ease, background-color 0.2s ease;
+          transition: transform var(--fn-transition-fast), opacity var(--fn-transition-fast);
         }
 
         button:active:not(:disabled) {
-          transform: scale(0.96);
-          opacity: 0.82;
+          transform: scale(0.97);
+          opacity: 0.85;
         }
 
         button:disabled {
@@ -80,12 +73,6 @@ export class FnButton extends HTMLElement {
         .variant-secondary {
           background-color: var(--fn-bg-surface-secondary, #E5E5EA);
           color: var(--fn-color-primary, #007AFF);
-        }
-
-        .variant-plain {
-          background-color: transparent;
-          color: var(--fn-color-primary, #007AFF);
-          padding: 8px 12px;
         }
 
         .variant-danger {
