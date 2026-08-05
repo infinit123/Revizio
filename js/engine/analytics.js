@@ -1,40 +1,43 @@
-export function calculateSafeToSpend({ transactions, recurring, goals, monthlyBudget, currentDate = new Date() }) {
+export function calculateSafeToSpend({ transactions = [], recurring = [], goals = [], monthlyBudget = 0, currentDate = new Date() }) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  
+
   const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
   const currentDay = currentDate.getDate();
   const daysRemaining = Math.max(1, totalDaysInMonth - currentDay + 1);
 
-  const monthTxs = transactions.filter(tx => {
+  const monthTxs = transactions.filter((tx) => {
+    if (!tx || !tx.date) return false;
     const d = new Date(tx.date);
-    return d.getFullYear() === year && d.getMonth() === month && !tx.excludeFromAnalytics;
+    return !isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month && !tx.excludeFromAnalytics;
   });
 
   const spentSoFar = monthTxs
-    .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + Number(tx.amount), 0);
+    .filter((tx) => tx.type === 'expense')
+    .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
 
   const incomeSoFar = monthTxs
-    .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + Number(tx.amount), 0);
+    .filter((tx) => tx.type === 'income')
+    .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
 
   const pendingRecurring = recurring
-    .filter(rec => {
-      if (rec.status !== 'active') return false;
+    .filter((rec) => {
+      if (!rec || rec.status !== 'active' || !rec.nextDueDate) return false;
       const dueDate = new Date(rec.nextDueDate);
-      return dueDate.getFullYear() === year && 
-             dueDate.getMonth() === month && 
+      return !isNaN(dueDate.getTime()) &&
+             dueDate.getFullYear() === year &&
+             dueDate.getMonth() === month &&
              dueDate.getDate() >= currentDay;
     })
-    .reduce((sum, rec) => sum + Number(rec.amount), 0);
+    .reduce((sum, rec) => sum + (Number(rec.amount) || 0), 0);
 
   const monthlyGoalAllocations = goals
-    .filter(g => g.status !== 'completed' && g.targetDate)
+    .filter((g) => g && g.status !== 'completed' && g.targetDate)
     .reduce((sum, g) => {
       const target = new Date(g.targetDate);
+      if (isNaN(target.getTime())) return sum;
       const monthsLeft = Math.max(1, (target.getFullYear() - year) * 12 + (target.getMonth() - month));
-      const remainingAmount = Math.max(0, g.targetAmount - g.currentAmount);
+      const remainingAmount = Math.max(0, (Number(g.targetAmount) || 0) - (Number(g.currentAmount) || 0));
       return sum + (remainingAmount / monthsLeft);
     }, 0);
 
