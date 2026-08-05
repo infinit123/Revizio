@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <title>Finora</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
+  <div id="app-root" class="app-root">
+    <header class="app-header">
+      <h1 class="app-title">Finora</h1>
+      <span class="app-subtitle">Financial Clarity, Daily</span>
+    </header>
+
+    <main class="app-main" id="app-main" aria-live="polite">
+      <section class="screen screen-summary" data-screen="summary">
+        <fn-card>
+          <h2 slot="header">Safe-to-Spend</h2>
+          <div slot="body" class="metrics-grid">
+            <fn-metric data-key="sts-today" label="Astăzi" value="0" unit="RON"></fn-metric>
+            <fn-metric data-key="sts-daily" label="Buget zilnic" value="0" unit="RON"></fn-metric>
+            <fn-metric data-key="sts-remaining" label="Rămas luna aceasta" value="0" unit="RON"></fn-metric>
+          </div>
+        </fn-card>
+
+        <fn-card>
+          <h2 slot="header">Obiective</h2>
+          <div slot="body" id="goals-list" class="list-placeholder">
+            Nu există încă obiective. Adaugă unul din Settings.
+          </div>
+        </fn-card>
+      </section>
+
+      <section class="screen screen-forecast" data-screen="forecast" hidden>
+        <fn-card>
+          <h2 slot="header">Prognoză cheltuieli</h2>
+          <div slot="body" class="metrics-grid">
+            <fn-metric data-key="forecast-daily" label="Rată zilnică" value="0" unit="RON"></fn-metric>
+            <fn-metric data-key="forecast-month" label="Prognoză lunară" value="0" unit="RON"></fn-metric>
+            <fn-metric data-key="forecast-confidence" label="Încredere" value="0" unit="%"></fn-metric>
+          </div>
+        </fn-card>
+
+        <fn-card>
+          <h2 slot="header">Tendințe</h2>
+          <div slot="body" id="forecast-details" class="list-placeholder">
+            Se calculează după ce adaugi câteva tranzacții.
+          </div>
+        </fn-card>
+      </section>
+
+      <section class="screen screen-transactions" data-screen="transactions" hidden>
+        <fn-card>
+          <h2 slot="header">Tranzacții</h2>
+          <div slot="body">
+            <div class="transactions-header">
+              <span>Ultimele tranzacții</span>
+              <fn-button id="add-transaction-btn" variant="primary">Adaugă</fn-button>
+            </div>
+            <ul id="transactions-list" class="transactions-list" aria-label="Lista tranzacțiilor"></ul>
+          </div>
+        </fn-card>
+      </section>
+
+      <section class="screen screen-settings" data-screen="settings" hidden>
+        <fn-card>
+          <h2 slot="header">Setări generale</h2>
+          <div slot="body">
+            <form id="settings-form" class="settings-form">
+              <label class="form-row">
+                <span>Monedă</span>
+                <select name="currency" id="settings-currency">
+                  <option value="RON">RON</option>
+                  <option value="EUR">EUR</option>
+                  <option value="USD">USD</option>
+                </select>
+              </label>
+
+              <label class="form-row">
+                <span>Mod întunecat</span>
+                <select name="theme" id="settings-theme">
+                  <option value="auto">Auto</option>
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </label>
+
+              <label class="form-row">
+                <span>Buget lunar total</span>
+                <input type="number" id="settings-monthly-budget" min="0" step="0.01" inputmode="decimal">
+              </label>
+
+              <div class="form-actions">
+                <fn-button id="settings-save-btn" variant="primary">Salvează</fn-button>
+              </div>
+            </form>
+          </div>
+        </fn-card>
+
+        <fn-card>
+          <h2 slot="header">Backup & Restore</h2>
+          <div slot="body" class="backup-actions">
+            <fn-button id="backup-export-btn" variant="secondary">Exportă date</fn-button>
+            <input type="file" id="backup-import-input" accept="application/json" hidden>
+            <fn-button id="backup-import-btn" variant="secondary">Importă date</fn-button>
+          </div>
+        </fn-card>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navigare principală">
+      <button class="bottom-nav-item is-active" data-target="summary">
+        <span class="bottom-nav-icon">◎</span>
+        <span class="bottom-nav-label">Summary</span>
+      </button>
+      <button class="bottom-nav-item" data-target="forecast">
+        <span class="bottom-nav-icon">▤</span>
+        <span class="bottom-nav-label">Forecast</span>
+      </button>
+      <button class="bottom-nav-item" data-target="transactions">
+        <span class="bottom-nav-icon">≡</span>
+        <span class="bottom-nav-label">Transactions</span>
+      </button>
+      <button class="bottom-nav-item" data-target="settings">
+        <span class="bottom-nav-icon">⚙︎</span>
+        <span class="bottom-nav-label">Settings</span>
+      </button>
+    </nav>
+
+    <fn-sheet id="transaction-sheet" title="Tranzacție nouă">
+      <form id="transaction-form" slot="body" class="transaction-form">
+        <div class="form-row">
+          <label>Tip</label>
+          <div class="segmented-control">
+            <input type="radio" id="type-expense" name="type" value="expense" checked>
+            <label for="type-expense">Cheltuială</label>
+            <input type="radio" id="type-income" name="type" value="income">
+            <label for="type-income">Venit</label>
+          </div>
+        </div>
+
+        <label class="form-row">
+          <span>Suma</span>
+          <input type="number" name="amount" id="transaction-amount" min="0" step="0.01" required inputmode="decimal">
+        </label>
+
+        <label class="form-row">
+          <span>Data</span>
+          <input type="date" name="date" id="transaction-date" required>
+        </label>
+
+        <label class="form-row">
+          <span>Comerciant / Descriere</span>
+          <input type="text" name="merchant" id="transaction-merchant" required maxlength="80">
+        </label>
+
+        <label class="form-row">
+          <span>Categorie</span>
+          <input type="text" name="category" id="transaction-category" maxlength="40">
+        </label>
+
+        <label class="form-row checkbox-row">
+          <input type="checkbox" name="isRecurring" id="transaction-recurring">
+          <span>Marchează ca recurent</span>
+        </label>
+
+        <div class="form-actions">
+          <fn-button id="transaction-cancel-btn" variant="secondary" type="button">Renunță</fn-button>
+          <fn-button id="transaction-submit-btn" variant="primary" type="submit">Salvează</fn-button>
+        </div>
+      </form>
+    </fn-sheet>
+
+    <div id="security-lock" class="security-lock" hidden>
+      <div class="security-lock-inner">
+        <h2>Finora blocată</h2>
+        <p>Aplicația a fost inactivă. Apasă pentru a continua.</p>
+        <fn-button id="security-unlock-btn" variant="primary">Deblochează</fn-button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/config.js"></script>
+  <script type="module" src="js/ui/components/fn-button.js"></script>
+  <script type="module" src="js/ui/components/fn-card.js"></script>
+  <script type="module" src="js/ui/components/fn-metric.js"></script>
+  <script type="module" src="js/ui/components/fn-sheet.js"></script>
+  <script type="module" src="js/utils/haptics.js"></script>
+  <script type="module" src="js/db/database.js"></script>
+  <script type="module" src="js/engine/analytics.js"></script>
+  <script type="module" src="js/engine/forecasting.js"></script>
+  <script type="module" src="js/engine/habits.js"></script>
+  <script type="module" src="js/backup/validator.js"></script>
+  <script type="module" src="js/backup/exporter.js"></script>
+  <script type="module" src="js/backup/importer.js"></script>
+  <script type="module" src="js/core/security.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
+

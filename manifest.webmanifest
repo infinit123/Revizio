@@ -1,0 +1,24 @@
+{
+  "name": "Finora",
+  "short_name": "Finora",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050814",
+  "theme_color": "#0b1020",
+  "description": "Finora - aplicație financiară PWA pentru buget, prognoză și obiceiuri de cheltuire.",
+  "lang": "ro-RO",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
