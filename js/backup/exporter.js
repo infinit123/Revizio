@@ -37,7 +37,7 @@ export class BackupExporter {
         const file = new File([jsonString], filename, { type: 'application/json' });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
-            title: 'Finora Encrypted Backup',
+            title: 'Finora Data Backup',
             files: [file]
           });
           Haptics.success();
