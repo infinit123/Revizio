@@ -10,11 +10,23 @@ export class Database {
             
             request.onsuccess = (e) => resolve(e.target.result);
             
-            request.onupgradeneeded = (e) => {
+           request.onupgradeneeded = (e) => {
                 const db = e.target.result;
+                
+                // Transactions Store
                 if (!db.objectStoreNames.contains('transactions')) {
-                    const store = db.createObjectStore('transactions', { keyPath: 'id' });
-                    store.createIndex('timestamp', 'timestamp', { unique: false });
+                    const txStore = db.createObjectStore('transactions', { keyPath: 'id' });
+                    txStore.createIndex('timestamp', 'timestamp', { unique: false });
+                }
+                
+                // Settings Store
+                if (!db.objectStoreNames.contains('settings')) {
+                    db.createObjectStore('settings', { keyPath: 'key' });
+                }
+                
+                // Recurring / Habits Store
+                if (!db.objectStoreNames.contains('recurring')) {
+                    db.createObjectStore('recurring', { keyPath: 'id' });
                 }
             };
         });
