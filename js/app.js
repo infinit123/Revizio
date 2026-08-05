@@ -2,41 +2,30 @@
 import { initRouter, registerRoute } from "./router.js";
 import { initTabBar } from "../components/tab-bar.js";
 import { createShell } from "../screens/shell.js";
-import { ThemeManager } from "../modules/theme-manager.js";
-import { PwaManager } from "../modules/pwa-manager.js";
-import { DbService } from "../services/db-service.js";
 
-async function bootstrap() {
-  const themeManager = new ThemeManager();
-  themeManager.init();
-
-  const pwaManager = new PwaManager();
-  pwaManager.registerServiceWorker();
-
-  const db = new DbService();
-  await db.init();
-
-  // routes de bază (fără funcții financiare)
+function bootstrap() {
+  // Rute minime
   registerRoute("/dashboard", () => {
     const { container, content } = createShell("Revizio Premium");
-    const intro = document.createElement("p");
-    intro.textContent = "Personal finance, reimaginat. Configurare inițială în curând.";
-    content.appendChild(intro);
+    content.textContent = "Dashboard inițial";
     return container;
   });
 
   registerRoute("/settings", () => {
     const { container, content } = createShell("Setări");
-    const themeToggle = themeManager.createToggle();
-    content.appendChild(themeToggle);
+    content.textContent = "Setări inițiale";
     return container;
   });
 
+  registerRoute("/analytics", () => {
+    const { container, content } = createShell("Analytics");
+    content.textContent = "Analytics inițial";
+    return container;
+  });
+
+  // Inițializare UI
   initTabBar();
   initRouter();
 }
 
-bootstrap().catch(err => {
-  console.error("Bootstrap error", err);
-});
-
+bootstrap();
