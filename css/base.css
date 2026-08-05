@@ -1,0 +1,62 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--fn-bg-base);
+  color: var(--fn-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.fn-app-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  padding-top: var(--fn-safe-area-top);
+  padding-bottom: var(--fn-safe-area-bottom);
+}
+
+.fn-viewport {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  position: relative;
+}
+
+.fn-security-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--fn-bg-glass);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.25s ease;
+}
+
+.fn-security-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fn-security-card {
+  text-align: center;
+  padding: 32px;
+  background: var(--fn-bg-surface);
+  border-radius: var(--fn-radius-xl);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  max-width: 280px;
+  width: 90%;
+}
