@@ -1,8 +1,9 @@
-export const CONFIG = {
+export const CONFIG = Object.freeze({
   APP_NAME: 'Finora',
   VERSION: '1.0.0',
   DB_NAME: 'finora_db',
   DB_VERSION: 1,
-  AUTO_LOCK_DEFAULT_MINUTES: 1,
-  DEFAULT_CURRENCY: 'EUR'
-};
+  DEFAULT_MONTHLY_BUDGET: 2000,
+  DEFAULT_CURRENCY: '€',
+  AUTO_LOCK_IDLE_TIMEOUT_MS: 300000
+});
