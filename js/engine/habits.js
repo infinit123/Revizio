@@ -1,5 +1,5 @@
 export function normalizeMerchant(name) {
-  if (!name) return '';
+  if (!name || typeof name !== 'string') return '';
   return name
     .toLowerCase()
     .replace(/(https?:\/\/)?(www\.)?/, '')
@@ -8,20 +8,23 @@ export function normalizeMerchant(name) {
     .trim();
 }
 
-export function detectRecurringPatterns(transactions) {
+export function detectRecurringPatterns(transactions = []) {
   const merchantGroups = {};
 
   transactions
-    .filter(tx => tx.type === 'expense' && tx.merchant)
-    .forEach(tx => {
+    .filter((tx) => tx && tx.type === 'expense' && tx.merchant)
+    .forEach((tx) => {
       const key = normalizeMerchant(tx.merchant);
       if (!key) return;
       if (!merchantGroups[key]) merchantGroups[key] = [];
+      const d = new Date(tx.date);
+      if (isNaN(d.getTime())) return;
+
       merchantGroups[key].push({
-        amount: Number(tx.amount),
-        date: new Date(tx.date).getTime(),
+        amount: Number(tx.amount) || 0,
+        date: d.getTime(),
         rawMerchant: tx.merchant,
-        category: tx.category
+        category: tx.category || 'General'
       });
     });
 
@@ -39,27 +42,30 @@ export function detectRecurringPatterns(transactions) {
     }
 
     const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    if (avgInterval <= 0) continue;
 
     const variance = intervals.reduce((sum, val) => sum + Math.pow(val - avgInterval, 2), 0) / intervals.length;
     const stdDev = Math.sqrt(variance);
 
-    const amounts = items.map(i => i.amount);
+    const amounts = items.map((i) => i.amount);
     const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
-    const maxAmountDiff = Math.max(...amounts.map(a => Math.abs(a - avgAmount)));
+    if (avgAmount <= 0) continue;
+
+    const maxAmountDiff = Math.max(...amounts.map((a) => Math.abs(a - avgAmount)));
     const amountVariancePercent = (maxAmountDiff / avgAmount) * 100;
 
-    if (stdDev <= 3 && amountVariancePercent <= 10) {
+    if (stdDev <= 4 && amountVariancePercent <= 15) {
       let frequency = 'custom';
       if (Math.abs(avgInterval - 7) <= 2) frequency = 'weekly';
-      else if (Math.abs(avgInterval - 30) <= 3) frequency = 'monthly';
-      else if (Math.abs(avgInterval - 365) <= 5) frequency = 'yearly';
+      else if (Math.abs(avgInterval - 30) <= 4) frequency = 'monthly';
+      else if (Math.abs(avgInterval - 365) <= 10) frequency = 'yearly';
 
       candidates.push({
         merchant: items[items.length - 1].rawMerchant,
         normalizedKey: key,
         avgAmount: Number(avgAmount.toFixed(2)),
         estimatedFrequency: frequency,
-        confidenceScore: Number(Math.max(0, 100 - (stdDev * 15 + amountVariancePercent)).toFixed(0)),
+        confidenceScore: Math.min(100, Math.max(0, Math.round(100 - (stdDev * 10 + amountVariancePercent)))),
         category: items[items.length - 1].category
       });
     }
