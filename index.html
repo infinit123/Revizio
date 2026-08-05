@@ -10,36 +10,74 @@
 </head>
 <body>
   <main class="app-container">
-    <section class="card" id="summary-card">
-      <h2 class="card-title">Net Balance</h2>
-      <div class="metric-display" id="net-balance">$0.00</div>
+    
+    <!-- ECRAN: SUMMARY -->
+    <section id="view-summary" class="view-page active">
+      <div class="card" id="summary-card">
+        <h2 class="card-title">Net Balance</h2>
+        <div class="metric-display" id="net-balance">$0.00</div>
+      </div>
+
+      <div class="card" id="transaction-form-card">
+        <h2 class="card-title">Add Transaction</h2>
+        <form id="transaction-form" novalidate>
+          <div class="form-group">
+            <input type="text" id="tx-title" placeholder="Transaction Title (e.g. Salary, Rent)" required>
+          </div>
+          <div class="form-group">
+            <input type="number" id="tx-amount" placeholder="0.00" step="0.01" min="0.01" required>
+          </div>
+          <div class="form-group">
+            <select id="tx-type" required>
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" id="submit-btn">Save Transaction</button>
+          <div id="form-error" class="error-msg hidden"></div>
+        </form>
+      </div>
+
+      <div class="card" id="history-card">
+        <h2 class="card-title">Recent Activity</h2>
+        <ul id="transaction-list" class="list-group"></ul>
+      </div>
     </section>
 
-    <section class="card" id="transaction-form-card">
-      <h2 class="card-title">Add Transaction</h2>
-      <form id="transaction-form" novalidate>
-        <div class="form-group">
-          <input type="text" id="tx-title" placeholder="Transaction Title (e.g. Salary, Rent)" required>
-        </div>
-        <div class="form-group">
-          <input type="number" id="tx-amount" placeholder="0.00" step="0.01" min="0.01" required>
-        </div>
-        <div class="form-group">
-          <select id="tx-type" required>
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary" id="submit-btn">Save Transaction</button>
-        <div id="form-error" class="error-msg hidden"></div>
-      </form>
+    <!-- ECRAN: FORECAST (Placeholder pentru următorul modul) -->
+    <section id="view-forecast" class="view-page">
+      <div class="card">
+        <h2 class="card-title">Expense Forecast</h2>
+        <div class="metric-display" id="forecast-metric">--</div>
+        <p class="text-muted" style="margin-top: 10px;">Based on EWMA algorithm</p>
+      </div>
     </section>
 
-    <section class="card" id="history-card">
-      <h2 class="card-title">Recent Activity</h2>
-      <ul id="transaction-list" class="list-group"></ul>
+    <!-- ECRAN: SETTINGS (Placeholder) -->
+    <section id="view-settings" class="view-page">
+      <div class="card">
+        <h2 class="card-title">App Settings</h2>
+        <button class="btn btn-secondary" id="btn-backup" style="margin-bottom: 10px;">Export Backup (SHA-256)</button>
+        <button class="btn btn-secondary" id="btn-lock">Lock App</button>
+      </div>
     </section>
   </main>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-target="view-summary">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">Summary</span>
+    </button>
+    <button class="nav-item" data-target="view-forecast">
+      <span class="nav-icon">📈</span>
+      <span class="nav-label">Forecast</span>
+    </button>
+    <button class="nav-item" data-target="view-settings">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">Settings</span>
+    </button>
+  </nav>
 
   <script type="module" src="js/app.js"></script>
 </body>
