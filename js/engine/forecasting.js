@@ -1,4 +1,4 @@
-export function forecastMonthlySpend(transactions, monthlyBudget, currentDate = new Date()) {
+export function forecastMonthlySpend(transactions = [], monthlyBudget = 0, currentDate = new Date()) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const currentDay = currentDate.getDate();
@@ -9,12 +9,13 @@ export function forecastMonthlySpend(transactions, monthlyBudget, currentDate = 
     dailySpendMap[d] = 0;
   }
 
-  transactions.forEach(tx => {
+  transactions.forEach((tx) => {
+    if (!tx || !tx.date || tx.type !== 'expense' || tx.excludeFromAnalytics) return;
     const d = new Date(tx.date);
-    if (d.getFullYear() === year && d.getMonth() === month && tx.type === 'expense' && !tx.excludeFromAnalytics) {
+    if (!isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month) {
       const day = d.getDate();
       if (dailySpendMap[day] !== undefined) {
-        dailySpendMap[day] += Number(tx.amount);
+        dailySpendMap[day] += Number(tx.amount) || 0;
       }
     }
   });
