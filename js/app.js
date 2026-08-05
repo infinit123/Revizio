@@ -8,6 +8,7 @@ class AppController {
     }
 
     cacheDOM() {
+        // Elementele formularului și listei
         this.form = document.getElementById('transaction-form');
         this.titleInput = document.getElementById('tx-title');
         this.amountInput = document.getElementById('tx-amount');
@@ -16,16 +17,39 @@ class AppController {
         this.list = document.getElementById('transaction-list');
         this.balanceDisplay = document.getElementById('net-balance');
         this.submitBtn = document.getElementById('submit-btn');
+        
+        // Elementele de navigare (NOU)
+        this.navItems = document.querySelectorAll('.nav-item');
+        this.views = document.querySelectorAll('.view-page');
     }
 
     bindEvents() {
+        // Eveniment pentru formular
         this.form.addEventListener('submit', this.handleSubmission.bind(this));
+        
+        // Evenimente pentru navigare (NOU)
+        this.navItems.forEach(btn => {
+            btn.addEventListener('click', (e) => this.navigate(e.currentTarget));
+        });
     }
 
     async init() {
         await this.refreshUI();
         this.registerServiceWorker();
     }
+
+    // --- METODA NOUĂ DE NAVIGARE ---
+    navigate(targetBtn) {
+        // Elimină starea 'active' de pe toate butoanele și ecranele
+        this.navItems.forEach(nav => nav.classList.remove('active'));
+        this.views.forEach(view => view.classList.remove('active'));
+
+        // Adaugă starea 'active' pe butonul apăsat și pe ecranul corespunzător
+        targetBtn.classList.add('active');
+        const targetViewId = targetBtn.getAttribute('data-target');
+        document.getElementById(targetViewId).classList.add('active');
+    }
+    // --------------------------------
 
     async handleSubmission(e) {
         e.preventDefault();
@@ -36,7 +60,6 @@ class AppController {
         const amount = parseFloat(this.amountInput.value);
         const type = this.typeInput.value;
 
-        // Strict validation
         if (!title || isNaN(amount) || amount <= 0 || !['income', 'expense'].includes(type)) {
             this.showError('Please provide a valid title and amount greater than 0.');
             this.submitBtn.disabled = false;
@@ -117,5 +140,5 @@ class AppController {
     }
 }
 
-// Bootstrap
+// Inițializare aplicație
 document.addEventListener('DOMContentLoaded', () => new AppController());
