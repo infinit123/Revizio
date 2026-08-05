@@ -64,7 +64,7 @@ export class FnButton extends HTMLElement {
         event.stopImmediatePropagation();
         return;
       }
-      this.dispatchEvent(new Event('click', { bubbles: true, composed: true }));
+      this.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     });
   }
 
