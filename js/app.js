@@ -1,3 +1,4 @@
+import { CONFIG } from './config.js';
 import { FinoraDB } from './db/database.js';
 import { SecurityController } from './core/security.js';
 import { BackupExporter } from './backup/exporter.js';
@@ -23,101 +24,93 @@ class App {
     try {
       await this.db.open();
       this.registerServiceWorker();
-      this.renderLayout();
+      this.setupNavigation();
+      this.attachGlobalFormHandler();
       await this.loadTab(this.currentTab);
     } catch (err) {
-      console.error('Eroare la inițializare:', err);
+      console.error('Core App Init Failure:', err);
     }
   }
 
   registerServiceWorker() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('SW registration bypassed:', e));
     }
   }
 
-  renderLayout() {
-    const appShell = document.getElementById('app');
-    appShell.innerHTML = `
-      <header class="fn-header" style="padding: 14px 16px; font-weight: 700; font-size: 22px; display:flex; justify-content:space-between; align-items:center;">
-        <span>Finora</span>
-        <span style="font-size: 12px; font-weight: 500; opacity: 0.6;">v1.0.0</span>
-      </header>
-      <main class="fn-viewport" id="main-viewport"></main>
-      <nav class="fn-navigation" style="display: flex; justify-content: space-around; padding: 14px 8px; background: var(--fn-bg-surface); border-top: 1px solid var(--fn-border-color);">
-        <button id="nav-summary" style="background:none; border:none; color:var(--fn-color-primary); font-weight:600; font-size:14px;">Summary</button>
-        <button id="nav-forecast" style="background:none; border:none; color:var(--fn-text-secondary); font-size:14px;">Prognoză</button>
-        <button id="nav-tx" style="background:none; border:none; color:var(--fn-text-secondary); font-size:14px;">Tranzacții</button>
-        <button id="nav-settings" style="background:none; border:none; color:var(--fn-text-secondary); font-size:14px;">Setări</button>
-      </nav>
-
-      <fn-sheet id="tx-modal" title="Adaugă Tranzacție">
-        <form id="tx-form" style="display:flex; flex-direction:column; gap:12px;">
-          <input type="number" id="tx-amount" placeholder="Sumă (€)" step="0.01" required style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--fn-border-color); font-size:16px;" />
-          <input type="text" id="tx-merchant" placeholder="Comerciant / Descriere" required style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--fn-border-color); font-size:16px;" />
-          <select id="tx-type" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--fn-border-color); font-size:16px;">
-            <option value="expense">Cheltuială</option>
-            <option value="income">Venit</option>
-          </select>
-          <fn-button type="submit" variant="primary" full-width>Salvează</fn-button>
-        </form>
-      </fn-sheet>
-    `;
-
-    document.getElementById('nav-summary').onclick = () => this.switchTab('summary');
-    document.getElementById('nav-forecast').onclick = () => this.switchTab('forecast');
-    document.getElementById('nav-tx').onclick = () => this.switchTab('tx');
-    document.getElementById('nav-settings').onclick = () => this.switchTab('settings');
-
-    this.attachFormHandler();
-  }
-
-  attachFormHandler() {
-    const form = document.getElementById('tx-form');
-    if (!form) return;
-
-    form.onsubmit = async (e) => {
-      e.preventDefault();
-      const amount = document.getElementById('tx-amount').value;
-      const merchant = document.getElementById('tx-merchant').value;
-      const type = document.getElementById('tx-type').value;
-
-      await this.db.put('transactions', {
-        id: Date.now().toString(),
-        amount: Number(amount),
-        merchant: merchant,
-        type: type,
-        category: 'General',
-        date: new Date().toISOString()
+  setupNavigation() {
+    const navItems = document.querySelectorAll('.fn-nav-item');
+    navItems.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-tab');
+        if (tab && tab !== this.currentTab) {
+          navItems.forEach((i) => i.classList.remove('active'));
+          btn.classList.add('active');
+          this.switchTab(tab);
+        }
       });
-
-      Haptics.success();
-      document.getElementById('tx-modal').removeAttribute('open');
-      form.reset();
-      this.loadTab(this.currentTab);
-    };
+    });
   }
 
   async switchTab(tab) {
     this.currentTab = tab;
     Haptics.selection();
-    document.querySelectorAll('.fn-navigation button').forEach(b => b.style.color = 'var(--fn-text-secondary)');
-    document.getElementById(`nav-${tab}`).style.color = 'var(--fn-color-primary)';
     await this.loadTab(tab);
+  }
+
+  attachGlobalFormHandler() {
+    document.addEventListener('submit', async (e) => {
+      if (e.target && e.target.id === 'tx-form') {
+        e.preventDefault();
+        const amountInput = document.getElementById('tx-amount');
+        const merchantInput = document.getElementById('tx-merchant');
+        const typeInput = document.getElementById('tx-type');
+
+        const amount = parseFloat(amountInput.value);
+        const merchant = merchantInput.value.trim();
+        const type = typeInput.value;
+
+        if (isNaN(amount) || amount <= 0 || !merchant) {
+          Haptics.error();
+          alert('Please enter a valid amount and merchant.');
+          return;
+        }
+
+        await this.db.put('transactions', {
+          id: Date.now().toString(),
+          amount,
+          merchant,
+          type,
+          category: 'General',
+          date: new Date().toISOString()
+        });
+
+        Haptics.success();
+        const modal = document.getElementById('global-tx-modal');
+        if (modal) modal.removeAttribute('open');
+
+        e.target.reset();
+        await this.loadTab(this.currentTab);
+      }
+    });
   }
 
   async loadTab(tab) {
     const viewport = document.getElementById('main-viewport');
-    const transactions = await this.db.getAll('transactions');
-    const recurring = await this.db.getAll('recurring');
-    const goals = await this.db.getAll('goals');
+    if (!viewport) return;
+
+    const [transactions, recurring, goals] = await Promise.all([
+      this.db.getAll('transactions'),
+      this.db.getAll('recurring'),
+      this.db.getAll('goals')
+    ]);
 
     if (tab === 'summary') {
       const analytics = calculateSafeToSpend({
         transactions,
         recurring,
         goals,
-        monthlyBudget: 2000
+        monthlyBudget: CONFIG.DEFAULT_MONTHLY_BUDGET
       });
 
       const habits = detectRecurringPatterns(transactions);
@@ -125,96 +118,103 @@ class App {
       viewport.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <div>
-            <h1 style="font-size: 28px; font-weight: 700;">Summary</h1>
-            <p style="color: var(--fn-text-secondary); font-size:14px;">Buget Calculat Local</p>
+            <h1 style="font-size: 26px; font-weight: 700;">Summary</h1>
+            <p style="color: var(--fn-text-secondary); font-size:13px;">Local Safe-to-Spend Pool</p>
           </div>
-          <fn-button id="btn-open-tx" variant="primary">+ Adaugă</fn-button>
+          <fn-button id="btn-open-modal" variant="primary">+ Add Tx</fn-button>
         </div>
         
         <fn-card>
           <fn-metric 
             label="Safe-to-Spend" 
-            value="€${analytics.safeToSpendTotal}" 
+            value="${CONFIG.DEFAULT_CURRENCY}${analytics.safeToSpendTotal}" 
             status="${analytics.safeToSpendTotal > 0 ? 'success' : 'danger'}" 
-            description="Limita zilnică: €${analytics.dailySafeToSpend} (${analytics.daysRemaining} zile rămase)">
+            description="Daily limit: ${CONFIG.DEFAULT_CURRENCY}${analytics.dailySafeToSpend} (${analytics.daysRemaining} days left)">
           </fn-metric>
         </fn-card>
 
         ${habits.length > 0 ? `
-          <fn-card title="Abonamente Detectate Automatic">
-            ${habits.map(h => `
+          <fn-card title="Detected Subscriptions">
+            ${habits.map((h) => `
               <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--fn-border-color);">
                 <div>
                   <strong>${h.merchant}</strong>
-                  <div style="font-size:12px; color:gray;">Frecvență: ${h.estimatedFrequency} (Scor: ${h.confidenceScore}%)</div>
+                  <div style="font-size:12px; color:var(--fn-text-secondary);">${h.estimatedFrequency.toUpperCase()} · ${h.confidenceScore}% confidence</div>
                 </div>
-                <div style="font-weight:bold;">~€${h.avgAmount}</div>
+                <div style="font-weight:bold;">~${CONFIG.DEFAULT_CURRENCY}${h.avgAmount}</div>
               </div>
             `).join('')}
           </fn-card>
         ` : ''}
+
+        <fn-sheet id="global-tx-modal" title="New Transaction">
+          <form id="tx-form" style="display:flex; flex-direction:column; gap:12px;">
+            <input type="number" id="tx-amount" placeholder="Amount (${CONFIG.DEFAULT_CURRENCY})" step="0.01" required style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--fn-border-color); font-size:16px; background:var(--fn-bg-surface); color:var(--fn-text-primary);" />
+            <input type="text" id="tx-merchant" placeholder="Merchant or Title" required style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--fn-border-color); font-size:16px; background:var(--fn-bg-surface); color:var(--fn-text-primary);" />
+            <select id="tx-type" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--fn-border-color); font-size:16px; background:var(--fn-bg-surface); color:var(--fn-text-primary);">
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+            <fn-button type="submit" variant="primary" full-width>Save Entry</fn-button>
+          </form>
+        </fn-sheet>
       `;
 
-      document.getElementById('btn-open-tx').onclick = () => {
-        document.getElementById('tx-modal').setAttribute('open', '');
+      document.getElementById('btn-open-modal').onclick = () => {
+        document.getElementById('global-tx-modal').setAttribute('open', '');
       };
 
     } else if (tab === 'forecast') {
-      const forecast = forecastMonthlySpend(transactions, 2000);
+      const forecast = forecastMonthlySpend(transactions, CONFIG.DEFAULT_MONTHLY_BUDGET);
 
       viewport.innerHTML = `
-        <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">Prognoză EWMA</h1>
-        <p style="color: var(--fn-text-secondary); margin-bottom: 16px;">Predicție cheltuieli lunare</p>
+        <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 2px;">Forecast</h1>
+        <p style="color: var(--fn-text-secondary); margin-bottom: 16px; font-size:13px;">EWMA Weighted Projection</p>
 
         <fn-card>
           <fn-metric 
-            label="Estimare Final Lună" 
-            value="€${forecast.projectedTotalSpend}" 
+            label="Projected Month End" 
+            value="${CONFIG.DEFAULT_CURRENCY}${forecast.projectedTotalSpend}" 
             status="${forecast.status === 'on_track' ? 'success' : 'danger'}"
-            description="Viteza actuală de cheltuire: €${forecast.dailyVelocity} / zi">
+            description="Spending velocity: ${CONFIG.DEFAULT_CURRENCY}${forecast.dailyVelocity} / day">
           </fn-metric>
         </fn-card>
 
-        <fn-card title="Statistici Prognoză">
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; justify-content:space-between;"><span>Cheltuit până azi:</span><strong>€${forecast.spentSoFar}</strong></div>
-            <div style="display:flex; justify-content:space-between;"><span>Estimare rămasă:</span><strong>€${forecast.projectedRemainingSpend}</strong></div>
-            <div style="display:flex; justify-content:space-between;"><span>Diferență Buget (2000€):</span><strong style="color:${forecast.budgetDelta >= 0 ? 'green' : 'red'};">€${forecast.budgetDelta}</strong></div>
+        <fn-card title="Projection Details">
+          <div style="display:flex; flex-direction:column; gap:10px; font-size:14px;">
+            <div style="display:flex; justify-content:space-between;"><span>Spent So Far:</span><strong>${CONFIG.DEFAULT_CURRENCY}${forecast.spentSoFar}</strong></div>
+            <div style="display:flex; justify-content:space-between;"><span>Projected Remaining:</span><strong>${CONFIG.DEFAULT_CURRENCY}${forecast.projectedRemainingSpend}</strong></div>
+            <div style="display:flex; justify-content:space-between;"><span>Budget Delta:</span><strong style="color:${forecast.budgetDelta >= 0 ? 'var(--fn-color-success)' : 'var(--fn-color-danger)'};">${CONFIG.DEFAULT_CURRENCY}${forecast.budgetDelta}</strong></div>
           </div>
         </fn-card>
       `;
 
-    } else if (tab === 'tx') {
+    } else if (tab === 'transactions') {
       viewport.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h1 style="font-size: 28px; font-weight: 700;">Tranzacții</h1>
-          <fn-button id="btn-open-tx-2" variant="primary">+ Adaugă</fn-button>
+          <h1 style="font-size: 26px; font-weight: 700;">Transactions</h1>
         </div>
-        ${transactions.length === 0 ? '<p style="color:gray;">Nicio tranzacție salvată în IndexedDB.</p>' : ''}
-        ${transactions.map(t => `
+        ${transactions.length === 0 ? '<p style="color:var(--fn-text-secondary); text-align:center; margin-top:32px;">No recorded transactions found.</p>' : ''}
+        ${transactions.map((t) => `
           <div style="background:var(--fn-bg-surface); padding:14px; border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--fn-border-color);">
             <div>
               <strong>${t.merchant}</strong>
-              <div style="font-size:12px; color:gray;">${new Date(t.date).toLocaleDateString()}</div>
+              <div style="font-size:12px; color:var(--fn-text-secondary); margin-top:2px;">${new Date(t.date).toLocaleDateString()}</div>
             </div>
             <div style="font-weight:bold; color:${t.type === 'expense' ? 'var(--fn-color-danger)' : 'var(--fn-color-success)'};">
-              ${t.type === 'expense' ? '-' : '+'}€${t.amount}
+              ${t.type === 'expense' ? '-' : '+'}${CONFIG.DEFAULT_CURRENCY}${t.amount}
             </div>
           </div>
         `).join('')}
       `;
 
-      document.getElementById('btn-open-tx-2').onclick = () => {
-        document.getElementById('tx-modal').setAttribute('open', '');
-      };
-
     } else if (tab === 'settings') {
       viewport.innerHTML = `
-        <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 16px;">Setări & Backup</h1>
-        <fn-card title="Gestionare Date">
+        <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 16px;">Settings</h1>
+        <fn-card title="Data Management">
           <div style="display: flex; flex-direction: column; gap: 12px;">
-            <fn-button id="btn-export-data" variant="primary" full-width>Export Backup JSON (SHA-256)</fn-button>
-            <fn-button id="btn-import-trigger" variant="secondary" full-width>Restaurare din Fișier</fn-button>
+            <fn-button id="btn-export-data" variant="primary" full-width>Export Backup JSON</fn-button>
+            <fn-button id="btn-import-trigger" variant="secondary" full-width>Restore Backup File</fn-button>
             <input type="file" id="file-import-input" accept=".json" style="display: none;" />
           </div>
         </fn-card>
@@ -223,17 +223,27 @@ class App {
       const exporter = new BackupExporter(this.db);
       const importer = new BackupImporter(this.db);
 
-      document.getElementById('btn-export-data').onclick = () => exporter.exportData();
-      document.getElementById('btn-import-trigger').onclick = () => document.getElementById('file-import-input').click();
-      document.getElementById('file-import-input').onchange = async (e) => {
+      document.getElementById('btn-export-data').onclick = async () => {
+        try {
+          await exporter.exportData();
+        } catch (e) {
+          alert('Export failed: ' + e.message);
+        }
+      };
+
+      const importTrigger = document.getElementById('btn-import-trigger');
+      const fileInput = document.getElementById('file-import-input');
+
+      importTrigger.onclick = () => fileInput.click();
+      fileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (file) {
           try {
             const res = await importer.importFromFile(file);
-            alert(`Restaurare reușită! S-au importat ${res.recordCounts.transactions} tranzacții.`);
-            this.switchTab('summary');
+            alert(`Restore Successful! Restored ${res.recordCounts.transactions} transactions.`);
+            await this.switchTab('summary');
           } catch (err) {
-            alert('Eroare la restaurare: ' + err.message);
+            alert('Restore Error: ' + err.message);
           }
         }
       };
