@@ -1,5 +1,5 @@
-const CACHE_NAME = 'finora-v1.0.0';
-const ASSETS = [
+const CACHE_NAME = 'finora-v1.0.1';
+const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
@@ -9,14 +9,8 @@ const ASSETS = [
   './css/utilities.css',
   './js/app.js',
   './js/config.js',
-  './js/core/router.js',
-  './js/core/store.js',
   './js/core/security.js',
-  './js/core/pwa.js',
   './js/db/database.js',
-  './js/db/schemas.js',
-  './js/db/migrations.js',
-  './js/engine/worker.js',
   './js/engine/analytics.js',
   './js/engine/habits.js',
   './js/engine/forecasting.js',
@@ -27,42 +21,45 @@ const ASSETS = [
   './js/ui/components/fn-button.js',
   './js/ui/components/fn-sheet.js',
   './js/ui/components/fn-metric.js',
-  './js/utils/formatters.js',
   './js/utils/haptics.js'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => 
-      Promise.all(keys.map((key) => {
-        if (key !== CACHE_NAME) return caches.delete(key);
-      }))
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      )
     )
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
+    caches.match(event.request).then((cached) => {
+      const networkFetch = fetch(event.request).then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const cacheCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cacheCopy));
         }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return networkResponse;
-      });
+        return response;
+      }).catch(() => cached);
+
+      return cached || networkFetch;
     })
   );
 });
