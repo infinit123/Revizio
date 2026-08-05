@@ -17,10 +17,7 @@ export class FnSheet extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (name === 'open') {
-      const isOpen = this.hasAttribute('open');
-      if (isOpen) {
-        Haptics.selection();
-      }
+      if (this.hasAttribute('open')) Haptics.selection();
       this.updateState();
     } else {
       this.render();
@@ -31,12 +28,8 @@ export class FnSheet extends HTMLElement {
     const backdrop = this.shadowRoot.querySelector('.backdrop');
     const closeBtn = this.shadowRoot.querySelector('.close-btn');
 
-    if (backdrop) {
-      backdrop.addEventListener('click', () => this.close());
-    }
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.close());
-    }
+    if (backdrop) backdrop.addEventListener('click', () => this.close());
+    if (closeBtn) closeBtn.addEventListener('click', () => this.close());
   }
 
   close() {
@@ -69,7 +62,7 @@ export class FnSheet extends HTMLElement {
           justify-content: flex-end;
           opacity: 0;
           pointer-events: none;
-          transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+          transition: opacity 0.25s ease;
         }
 
         .sheet-container.open {
@@ -89,13 +82,12 @@ export class FnSheet extends HTMLElement {
           position: relative;
           background: var(--fn-bg-surface, #FFFFFF);
           border-radius: var(--fn-radius-xl, 28px) var(--fn-radius-xl, 28px) 0 0;
-          padding: 12px 20px calc(var(--fn-safe-area-bottom, 20px) + 20px) 20px;
+          padding: 16px 20px calc(var(--fn-safe-area-bottom, 20px) + 20px) 20px;
           max-height: 85vh;
           overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
           transform: translateY(100%);
-          transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.175);
-          box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+          transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+          box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
         }
 
         .sheet-container.open .sheet {
@@ -114,22 +106,21 @@ export class FnSheet extends HTMLElement {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
         }
 
         .title {
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 700;
-          letter-spacing: -0.4px;
         }
 
         .close-btn {
           background: var(--fn-bg-surface-secondary, #E5E5EA);
           border: none;
-          width: 30px;
-          height: 30px;
+          width: 28px;
+          height: 28px;
           border-radius: 50%;
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 600;
           display: flex;
           align-items: center;
