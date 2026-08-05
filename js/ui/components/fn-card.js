@@ -9,7 +9,7 @@ export class FnCard extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['title', 'subtitle', 'glass'];
+    return ['title', 'subtitle'];
   }
 
   attributeChangedCallback() {
@@ -19,7 +19,6 @@ export class FnCard extends HTMLElement {
   render() {
     const title = this.getAttribute('title');
     const subtitle = this.getAttribute('subtitle');
-    const isGlass = this.hasAttribute('glass');
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -29,13 +28,11 @@ export class FnCard extends HTMLElement {
         }
 
         .card {
-          background: ${isGlass ? 'var(--fn-bg-glass, rgba(255,255,255,0.78))' : 'var(--fn-bg-surface, #FFFFFF)'};
-          ${isGlass ? 'backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);' : ''}
+          background: var(--fn-bg-surface, #FFFFFF);
           border-radius: var(--fn-radius-l, 16px);
-          padding: 20px;
+          padding: 18px;
           border: 1px solid var(--fn-border-color, rgba(60,60,67,0.12));
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
-          transition: background-color 0.2s ease, border-color 0.2s ease;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
         }
 
         .header {
@@ -57,17 +54,12 @@ export class FnCard extends HTMLElement {
           font-size: 12px;
           color: var(--fn-text-tertiary, #C7C7CC);
         }
-
-        .content {
-          color: var(--fn-text-primary, #000000);
-        }
       </style>
       <div class="card">
         ${title || subtitle ? `
           <div class="header">
             ${title ? `<div class="title">${title}</div>` : ''}
             ${subtitle ? `<div class="subtitle">${subtitle}</div>` : ''}
-            <slot name="header-action"></slot>
           </div>
         ` : ''}
         <div class="content">
