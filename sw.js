@@ -1,4 +1,4 @@
-const CACHE_NAME = 'buget-ios-v3.0.3';
+const CACHE_NAME = 'finance-ios-v3-1';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,6 @@ const ASSETS = [
   './app.js',
   './manifest.json',
   './icon.svg'
-];
 ];
 
 self.addEventListener('install', (e) => {

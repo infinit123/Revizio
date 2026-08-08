@@ -41,7 +41,7 @@
         <span class="date-badge" id="current-date">Astăzi</span>
         <button class="btn-clear" id="btn-reset" title="Resetează Datele">Șterge Tot</button>
       </div>
-      <h1>Finance <span style="font-size: 12px; color: var(--ios-blue); font-weight: normal;">v3.0.2</span></h1>
+      <h1>Finance <span style="font-size: 12px; color: var(--ios-blue); font-weight: normal;">v3.1.0</span></h1>
     </header>
 
     <!-- SECȚIUNEA 1: DASHBOARD / GENERAL -->
@@ -50,9 +50,9 @@
       <!-- Selector Lunar iOS -->
       <div class="ios-card month-selector-card">
         <div class="month-selector">
-          <button type="button" id="btn-prev-month" class="month-nav-btn" aria-label="Luna precedentă">&#x2039;</button>
-          <span id="current-month-display" class="month-display">--- ----</span>
-          <button type="button" id="btn-next-month" class="month-nav-btn" aria-label="Luna următoare">&#x203A;</button>
+          <button type="button" class="month-nav-btn btn-prev-month-action" aria-label="Luna precedentă">&#x2039;</button>
+          <span class="month-display current-month-display-text">--- ----</span>
+          <button type="button" class="month-nav-btn btn-next-month-action" aria-label="Luna următoare">&#x203A;</button>
         </div>
       </div>
 
@@ -123,6 +123,63 @@
             <button type="button" id="btn-cancel-goal" class="picker-btn" style="padding: 12px;">Anulează</button>
           </div>
         </form>
+      </div>
+    </section>
+
+    <!-- SECȚIUNEA NOUĂ: CALENDAR FINANCIAR -->
+    <section id="sec-calendar" class="tab-content">
+      <!-- Navigare Lună Calendar -->
+      <div class="ios-card month-selector-card">
+        <div class="month-selector">
+          <button type="button" class="month-nav-btn btn-prev-month-action" aria-label="Luna precedentă">&#x2039;</button>
+          <span class="month-display current-month-display-text">--- ----</span>
+          <button type="button" class="month-nav-btn btn-next-month-action" aria-label="Luna următoare">&#x203A;</button>
+        </div>
+      </div>
+
+      <!-- Sumar Lunar Compact -->
+      <div class="metrics-grid">
+        <div class="ios-card metric-card">
+          <span class="metric-label">Venituri Lună</span>
+          <div class="metric-value color-income" id="cal-month-income">0,00 LEI</div>
+        </div>
+        <div class="ios-card metric-card">
+          <span class="metric-label">Cheltuieli Lună</span>
+          <div class="metric-value color-expense" id="cal-month-expenses">0,00 LEI</div>
+        </div>
+      </div>
+
+      <!-- Grilă Calendaristică -->
+      <div class="ios-card calendar-card">
+        <div class="calendar-weekdays">
+          <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+        </div>
+        <div class="calendar-days-grid" id="calendar-days-grid"></div>
+      </div>
+
+      <!-- Detalii Zi Selectată -->
+      <div class="ios-card" id="day-details-card">
+        <div class="card-header-flex">
+          <h3 class="card-title" id="selected-day-title">Detalii Zi</h3>
+          <button type="button" id="btn-add-tx-for-day" class="btn-clear" style="color: var(--ios-blue); font-size: 14px; font-weight: 600;">+ Adaugă Tranzacție</button>
+        </div>
+        
+        <div class="day-summary-row" id="day-summary-row">
+          <div class="day-summary-item">
+            <span class="day-sum-label">Venituri</span>
+            <span class="day-sum-val color-income" id="day-total-income">+0,00 LEI</span>
+          </div>
+          <div class="day-summary-item">
+            <span class="day-sum-label">Cheltuieli</span>
+            <span class="day-sum-val color-expense" id="day-total-expenses">-0,00 LEI</span>
+          </div>
+          <div class="day-summary-item">
+            <span class="day-sum-label">Sold Zi</span>
+            <span class="day-sum-val" id="day-total-net">0,00 LEI</span>
+          </div>
+        </div>
+
+        <ul class="ios-list" id="day-transactions-list" style="margin-top: 12px;"></ul>
       </div>
     </section>
 
@@ -220,6 +277,10 @@
     <button class="nav-btn" data-target="sec-goals">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
       <span>Obiectiv</span>
+    </button>
+    <button class="nav-btn" data-target="sec-calendar">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      <span>Calendar</span>
     </button>
     <button class="nav-btn" data-target="sec-add">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>

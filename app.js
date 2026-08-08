@@ -31,7 +31,7 @@ function showUpdateModal() {
   }
 }
 
-// Helper pentru obținerea datei curente în format ISO YYYY-MM-DD
+// Helpers pentru operare pe date fără erori de Timezone UTC
 function getTodayISOString() {
   const today = new Date();
   const year = today.getFullYear();
@@ -40,7 +40,6 @@ function getTodayISOString() {
   return `${year}-${month}-${day}`;
 }
 
-// Helper pentru formatare localizată a datei (ex: "08 august 2026")
 function formatDateFormatted(isoDateString) {
   if (!isoDateString) return '';
   const [year, month, day] = isoDateString.split('-');
@@ -59,12 +58,12 @@ let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let savingsGoal = JSON.parse(localStorage.getItem('savingsGoal')) || { title: 'Vacanță', target: 2000, current: 0 };
 let currentTheme = localStorage.getItem('appTheme') || 'auto';
 
-// Stare Navigare Lunarã (An și Lună selectate implicit = luna curentă)
+// Stare Navigare Lunarã (An și Lună selectate)
 const nowInitial = new Date();
 let selectedYear = nowInitial.getFullYear();
-let selectedMonth = nowInitial.getMonth(); // 0 = Ianuarie, 11 = Decembrie
+let selectedMonth = nowInitial.getMonth(); // 0 = Ianuarie
+let selectedDayISO = getTodayISOString(); // Ziua selectată implicit în Calendar
 
-// 3. Execuție după încărcarea completă a structurii DOM
 document.addEventListener('DOMContentLoaded', () => {
   // Event listener buton actualizare din Pop-Up
   const btnUpdateApp = document.getElementById('btn-update-app');
@@ -78,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- LOGICĂ SCHIMBARE TEMĂ (DARK / LIGHT / SYSTEM) ---
+  // --- LOGICĂ SCHIMBARE TEMĂ ---
   const themeBtns = document.querySelectorAll('.theme-btn');
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -110,8 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   themeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const selectedTheme = btn.getAttribute('data-theme-val');
-      applyTheme(selectedTheme);
+      applyTheme(btn.getAttribute('data-theme-val'));
     });
   });
 
@@ -195,17 +193,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateGoalUI();
 
-  // Elemente DOM Dashboard & Formular
+  // Elemente DOM Dashboard, Formular & Istoric
   const balanceEl = document.getElementById('balance');
   const balanceCardEl = document.getElementById('balance-card');
   const balanceStatusEl = document.getElementById('balance-status');
   const totalIncomeEl = document.getElementById('total-income');
   const totalExpensesEl = document.getElementById('total-expenses');
   const categoryBreakdownEl = document.getElementById('category-breakdown');
-
-  const btnPrevMonth = document.getElementById('btn-prev-month');
-  const btnNextMonth = document.getElementById('btn-next-month');
-  const currentMonthDisplay = document.getElementById('current-month-display');
 
   const form = document.getElementById('transaction-form');
   const txTypeInput = document.getElementById('tx-type');
@@ -219,6 +213,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnReset = document.getElementById('btn-reset');
   const currentDateEl = document.getElementById('current-date');
 
+  // Elemente Calendar
+  const calMonthIncomeEl = document.getElementById('cal-month-income');
+  const calMonthExpensesEl = document.getElementById('cal-month-expenses');
+  const calendarDaysGridEl = document.getElementById('calendar-days-grid');
+  const selectedDayTitleEl = document.getElementById('selected-day-title');
+  const btnAddTxForDay = document.getElementById('btn-add-tx-for-day');
+  const dayTotalIncomeEl = document.getElementById('day-total-income');
+  const dayTotalExpensesEl = document.getElementById('day-total-expenses');
+  const dayTotalNetEl = document.getElementById('day-total-net');
+  const dayTransactionsListEl = document.getElementById('day-transactions-list');
+
   if (currentDateEl) {
     const now = new Date();
     const options = { weekday: 'long', day: 'numeric', month: 'short' };
@@ -229,16 +234,19 @@ document.addEventListener('DOMContentLoaded', () => {
     txDateInput.value = getTodayISOString();
   }
 
-  // --- LOGICĂ NAVIGARE LUNARĂ ---
+  // --- LOGICĂ NAVIGARE LUNARĂ UNIFICATĂ ---
   function updateMonthDisplay() {
-    if (!currentMonthDisplay) return;
     const dateObj = new Date(selectedYear, selectedMonth, 1);
     const monthName = dateObj.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
-    currentMonthDisplay.innerText = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    const formattedStr = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    
+    document.querySelectorAll('.current-month-display-text').forEach(el => {
+      el.innerText = formattedStr;
+    });
   }
 
-  if (btnPrevMonth) {
-    btnPrevMonth.addEventListener('click', () => {
+  document.querySelectorAll('.btn-prev-month-action').forEach(btn => {
+    btn.addEventListener('click', () => {
       selectedMonth--;
       if (selectedMonth < 0) {
         selectedMonth = 11;
@@ -247,10 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
       updateMonthDisplay();
       updateUI();
     });
-  }
+  });
 
-  if (btnNextMonth) {
-    btnNextMonth.addEventListener('click', () => {
+  document.querySelectorAll('.btn-next-month-action').forEach(btn => {
+    btn.addEventListener('click', () => {
       selectedMonth++;
       if (selectedMonth > 11) {
         selectedMonth = 0;
@@ -259,9 +267,8 @@ document.addEventListener('DOMContentLoaded', () => {
       updateMonthDisplay();
       updateUI();
     });
-  }
+  });
 
-  // Helper filtrare tranzacții pentru luna curentă selectată
   function getMonthlyTransactions() {
     return transactions.filter(t => {
       if (!t.date) return false;
@@ -270,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 4. Navigare Tab-uri
+  // --- NAVIGARE TAB-URI ---
   const navButtons = document.querySelectorAll('.nav-btn');
   const tabContents = document.querySelectorAll('.tab-content');
 
@@ -289,12 +296,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (targetId === 'sec-add' && txDateInput && !txDateInput.value) {
-        txDateInput.value = getTodayISOString();
+        txDateInput.value = selectedDayISO || getTodayISOString();
       }
     });
   });
 
-  // 5. Comutator Tip Tranzacție
+  // --- COMUTATOR TIP TRANZACȚIE ---
   const pickExpenseBtn = document.getElementById('pick-expense');
   const pickIncomeBtn = document.getElementById('pick-income');
 
@@ -322,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace('RON', 'LEI');
   }
 
-  // 6. Actualizare Interfață Dashboard & Istoric
+  // --- ACTUALIZARE UI PRINCIPALĂ ---
   function updateUI() {
     const monthlyData = getMonthlyTransactions();
 
@@ -340,6 +347,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (totalIncomeEl) totalIncomeEl.innerText = formatCurrency(income);
     if (totalExpensesEl) totalExpensesEl.innerText = formatCurrency(expenses);
 
+    if (calMonthIncomeEl) calMonthIncomeEl.innerText = formatCurrency(income);
+    if (calMonthExpensesEl) calMonthExpensesEl.innerText = formatCurrency(expenses);
+
     if (balanceCardEl && balanceStatusEl) {
       if (balance < 0) {
         balanceCardEl.classList.add('negative');
@@ -352,6 +362,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateCategoryBreakdown(monthlyData);
     renderTransactionList();
+    renderCalendar();
+    renderDayDetails();
   }
 
   function updateCategoryBreakdown(monthlyData) {
@@ -397,41 +409,185 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     filteredTransactions.forEach(t => {
-      const li = document.createElement('li');
-      li.className = 'ios-list-item';
-
-      const isIncome = t.type === 'income';
-      const amountClass = isIncome ? 'color-income' : 'color-expense';
-      const sign = isIncome ? '+' : '-';
-      
-      const displayDate = t.date ? formatDateFormatted(t.date) : 'Dată necunoscută';
-
-      li.innerHTML = `
-        <div class="item-left">
-          <span class="item-title">${t.description}</span>
-          <span class="item-category">${t.category}</span>
-          <span class="item-date">${displayDate}</span>
-        </div>
-        <div class="item-right">
-          <span class="item-amount ${amountClass}">${sign}${formatCurrency(t.amount)}</span>
-          <button class="btn-delete-item" data-id="${t.id}" title="Șterge">&times;</button>
-        </div>
-      `;
-
+      const li = createTransactionListItem(t);
       transactionListEl.appendChild(li);
     });
 
+    attachDeleteEvents();
+  }
+
+  // --- RENDER CALENDAR ---
+  function renderCalendar() {
+    if (!calendarDaysGridEl) return;
+    calendarDaysGridEl.innerHTML = '';
+
+    const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1);
+    const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0);
+
+    let startDayOfWeek = firstDayOfMonth.getDay() - 1; // 0 = Luni, 6 = Duminică
+    if (startDayOfWeek < 0) startDayOfWeek = 6;
+
+    const daysInMonth = lastDayOfMonth.getDate();
+    const prevMonthLastDay = new Date(selectedYear, selectedMonth, 0).getDate();
+
+    const todayISO = getTodayISOString();
+
+    // 1. Zile din luna anterioară
+    for (let i = startDayOfWeek; i > 0; i--) {
+      const dayNum = prevMonthLastDay - i + 1;
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cal-day-cell other-month';
+      cell.innerText = dayNum;
+      calendarDaysGridEl.appendChild(cell);
+    }
+
+    // 2. Zilele lunii curente
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayStr = String(d).padStart(2, '0');
+      const monthStr = String(selectedMonth + 1).padStart(2, '0');
+      const currentCellISO = `${selectedYear}-${monthStr}-${dayStr}`;
+
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cal-day-cell';
+      cell.innerText = d;
+
+      if (currentCellISO === todayISO) {
+        cell.classList.add('today');
+      }
+
+      if (currentCellISO === selectedDayISO) {
+        cell.classList.add('selected');
+      }
+
+      // Identificare tranzacții în ziua respectivă
+      const dayTxs = transactions.filter(t => t.date === currentCellISO);
+      const hasIncome = dayTxs.some(t => t.type === 'income');
+      const hasExpense = dayTxs.some(t => t.type === 'expense');
+
+      if (hasIncome || hasExpense) {
+        const dotsContainer = document.createElement('div');
+        dotsContainer.className = 'cal-dots-container';
+
+        if (hasIncome) {
+          const dot = document.createElement('span');
+          dot.className = 'cal-dot income';
+          dotsContainer.appendChild(dot);
+        }
+
+        if (hasExpense) {
+          const dot = document.createElement('span');
+          dot.className = 'cal-dot expense';
+          dotsContainer.appendChild(dot);
+        }
+
+        cell.appendChild(dotsContainer);
+      }
+
+      const txCount = dayTxs.length;
+      cell.setAttribute('aria-label', `${d} ${formatDateFormatted(currentCellISO)}, ${txCount} tranzacții`);
+
+      cell.addEventListener('click', () => {
+        selectedDayISO = currentCellISO;
+        renderCalendar();
+        renderDayDetails();
+      });
+
+      calendarDaysGridEl.appendChild(cell);
+    }
+
+    // 3. Zile din luna următoare pentru aliniere completă
+    const totalCells = startDayOfWeek + daysInMonth;
+    const remainingCells = (7 - (totalCells % 7)) % 7;
+    for (let j = 1; j <= remainingCells; j++) {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cal-day-cell other-month';
+      cell.innerText = j;
+      calendarDaysGridEl.appendChild(cell);
+    }
+  }
+
+  // --- RENDER DETALII ZI SELECTATĂ ---
+  function renderDayDetails() {
+    if (!selectedDayTitleEl || !dayTransactionsListEl) return;
+
+    selectedDayTitleEl.innerText = formatDateFormatted(selectedDayISO);
+
+    const dayTxs = transactions.filter(t => t.date === selectedDayISO);
+
+    const income = dayTxs.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+    const expenses = dayTxs.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+    const net = income - expenses;
+
+    if (dayTotalIncomeEl) dayTotalIncomeEl.innerText = `+${formatCurrency(income)}`;
+    if (dayTotalExpensesEl) dayTotalExpensesEl.innerText = `-${formatCurrency(expenses)}`;
+    if (dayTotalNetEl) {
+      dayTotalNetEl.innerText = formatCurrency(net);
+      dayTotalNetEl.className = 'day-sum-val ' + (net >= 0 ? 'color-income' : 'color-expense');
+    }
+
+    dayTransactionsListEl.innerHTML = '';
+
+    if (dayTxs.length === 0) {
+      dayTransactionsListEl.innerHTML = '<li class="empty-text">Nicio activitate financiară în această zi.</li>';
+      return;
+    }
+
+    dayTxs.forEach(t => {
+      const li = createTransactionListItem(t);
+      dayTransactionsListEl.appendChild(li);
+    });
+
+    attachDeleteEvents();
+  }
+
+  function createTransactionListItem(t) {
+    const li = document.createElement('li');
+    li.className = 'ios-list-item';
+
+    const isIncome = t.type === 'income';
+    const amountClass = isIncome ? 'color-income' : 'color-expense';
+    const sign = isIncome ? '+' : '-';
+    const displayDate = t.date ? formatDateFormatted(t.date) : 'Dată necunoscută';
+
+    li.innerHTML = `
+      <div class="item-left">
+        <span class="item-title">${t.description}</span>
+        <span class="item-category">${t.category}</span>
+        <span class="item-date">${displayDate}</span>
+      </div>
+      <div class="item-right">
+        <span class="item-amount ${amountClass}">${sign}${formatCurrency(t.amount)}</span>
+        <button class="btn-delete-item" data-id="${t.id}" title="Șterge">&times;</button>
+      </div>
+    `;
+
+    return li;
+  }
+
+  function attachDeleteEvents() {
     document.querySelectorAll('.btn-delete-item').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const id = Number(e.target.getAttribute('data-id'));
+      btn.onclick = (e) => {
+        const id = Number(e.currentTarget.getAttribute('data-id'));
         transactions = transactions.filter(t => t.id !== id);
         saveData();
         updateUI();
-      });
+      };
     });
   }
 
-  // 7. Adăugare Tranzacție
+  // --- ACTION: ADĂUGARE TRANZACȚIE PENTRU ZIUA SELECTATĂ ---
+  if (btnAddTxForDay) {
+    btnAddTxForDay.addEventListener('click', () => {
+      if (txDateInput) txDateInput.value = selectedDayISO;
+      const addTab = document.querySelector('[data-target="sec-add"]');
+      if (addTab) addTab.click();
+    });
+  }
+
+  // --- STOCARE & SUBMIT ---
   if (form) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -456,20 +612,21 @@ document.addEventListener('DOMContentLoaded', () => {
       transactions.unshift(newTransaction);
       saveData();
 
-      // Setează automat luna vizualizată la luna în care s-a adăugat tranzacția
+      // Sincronizare an, lună și zi selectată
       const [y, m] = date.split('-').map(Number);
       selectedYear = y;
       selectedMonth = m - 1;
+      selectedDayISO = date;
 
       updateMonthDisplay();
       updateUI();
 
       txDescInput.value = '';
       txAmountInput.value = '';
-      if (txDateInput) txDateInput.value = getTodayISOString();
+      if (txDateInput) txDateInput.value = selectedDayISO;
 
-      const defaultTab = document.querySelector('[data-target="sec-dashboard"]');
-      if (defaultTab) defaultTab.click();
+      const calTab = document.querySelector('[data-target="sec-calendar"]');
+      if (calTab) calTab.click();
     });
   }
 
