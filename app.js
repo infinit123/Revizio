@@ -53,19 +53,58 @@ function formatDateFormatted(isoDateString) {
   });
 }
 
+// Global Numeric Motion Engine (Interpolare Smooth pentru Suma Afișată)
+const numericAnimState = new WeakMap();
+
+function animateNumber(element, targetValue, isCurrency = true) {
+  if (!element) return;
+  
+  const startValue = numericAnimState.has(element) 
+    ? numericAnimState.get(element) 
+    : 0;
+
+  numericAnimState.set(element, targetValue);
+
+  if (Math.abs(startValue - targetValue) < 0.01) {
+    element.innerText = isCurrency ? formatCurrency(targetValue) : targetValue.toFixed(2);
+    return;
+  }
+
+  const duration = 400; // ms
+  const startTime = performance.now();
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // Cubic decelerate easing
+    const easeProgress = 1 - Math.pow(1 - progress, 3);
+    const currentValue = startValue + (targetValue - startValue) * easeProgress;
+
+    element.innerText = isCurrency ? formatCurrency(currentValue) : currentValue.toFixed(2);
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      element.innerText = isCurrency ? formatCurrency(targetValue) : targetValue.toFixed(2);
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
 // 2. Stare Aplicație & Date
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let savingsGoal = JSON.parse(localStorage.getItem('savingsGoal')) || { title: 'Vacanță', target: 2000, current: 0 };
 let currentTheme = localStorage.getItem('appTheme') || 'auto';
 
-// Stare Navigare Lunarã (An și Lună selectate)
+// Stare Navigare Lunarã
 const nowInitial = new Date();
 let selectedYear = nowInitial.getFullYear();
-let selectedMonth = nowInitial.getMonth(); // 0 = Ianuarie
-let selectedDayISO = getTodayISOString(); // Ziua selectată implicit în Calendar
+let selectedMonth = nowInitial.getMonth();
+let selectedDayISO = getTodayISOString();
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Event listener buton actualizare din Pop-Up
   const btnUpdateApp = document.getElementById('btn-update-app');
   if (btnUpdateApp) {
     btnUpdateApp.addEventListener('click', () => {
@@ -132,12 +171,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateGoalUI() {
     if (!goalTitleText) return;
     goalTitleText.innerText = savingsGoal.title;
-    goalProgressText.innerText = `${formatCurrency(savingsGoal.current)} / ${formatCurrency(savingsGoal.target)}`;
+    if (goalProgressText) {
+      goalProgressText.innerText = `${formatCurrency(savingsGoal.current)} / ${formatCurrency(savingsGoal.target)}`;
+    }
     
     let percentage = (savingsGoal.current / savingsGoal.target) * 100;
     if (percentage > 100) percentage = 100;
     if (percentage < 0) percentage = 0;
-    goalProgressFill.style.width = `${percentage}%`;
+    if (goalProgressFill) {
+      goalProgressFill.style.width = `${percentage}%`;
+    }
 
     localStorage.setItem('savingsGoal', JSON.stringify(savingsGoal));
   }
@@ -193,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateGoalUI();
 
-  // Elemente DOM Dashboard, Formular & Istoric
+  // Elemente DOM Dashboard
   const balanceEl = document.getElementById('balance');
   const balanceCardEl = document.getElementById('balance-card');
   const balanceStatusEl = document.getElementById('balance-status');
@@ -226,8 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (currentDateEl) {
     const now = new Date();
-    const options = { weekday: 'long', day: 'numeric', month: 'short' };
-    currentDateEl.innerText = now.toLocaleDateString('ro-RO', options);
+    const options = { weekday: 'short', day: 'numeric', month: 'short' };
+    currentDateEl.innerText = now.toLocaleDateString('ro-RO', options).toUpperCase();
   }
 
   if (txDateInput) {
@@ -238,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateMonthDisplay() {
     const dateObj = new Date(selectedYear, selectedMonth, 1);
     const monthName = dateObj.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
-    const formattedStr = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    const formattedStr = (monthName.charAt(0).toUpperCase() + monthName.slice(1)).toUpperCase();
     
     document.querySelectorAll('.current-month-display-text').forEach(el => {
       el.innerText = formattedStr;
@@ -329,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace('RON', 'LEI');
   }
 
-  // --- ACTUALIZARE UI PRINCIPALĂ ---
+  // --- ACTUALIZARE UI PRINCIPALĂ CU ANIMAȚII NUMERICE ---
   function updateUI() {
     const monthlyData = getMonthlyTransactions();
 
@@ -343,12 +386,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const balance = income - expenses;
 
-    if (balanceEl) balanceEl.innerText = formatCurrency(balance);
-    if (totalIncomeEl) totalIncomeEl.innerText = formatCurrency(income);
-    if (totalExpensesEl) totalExpensesEl.innerText = formatCurrency(expenses);
+    // Animație lină pe numere
+    animateNumber(balanceEl, balance);
+    animateNumber(totalIncomeEl, income);
+    animateNumber(totalExpensesEl, expenses);
 
-    if (calMonthIncomeEl) calMonthIncomeEl.innerText = formatCurrency(income);
-    if (calMonthExpensesEl) calMonthExpensesEl.innerText = formatCurrency(expenses);
+    animateNumber(calMonthIncomeEl, income);
+    animateNumber(calMonthExpensesEl, expenses);
 
     if (balanceCardEl && balanceStatusEl) {
       if (balance < 0) {
@@ -386,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
       row.className = 'category-row';
       row.innerHTML = `
         <span class="cat-name">${cat}</span>
-        <span class="cat-val">${formatCurrency(categoryTotals[cat])}</span>
+        <span class="cat-val numeric-accent">${formatCurrency(categoryTotals[cat])}</span>
       `;
       categoryBreakdownEl.appendChild(row);
     });
@@ -424,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1);
     const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0);
 
-    let startDayOfWeek = firstDayOfMonth.getDay() - 1; // 0 = Luni, 6 = Duminică
+    let startDayOfWeek = firstDayOfMonth.getDay() - 1;
     if (startDayOfWeek < 0) startDayOfWeek = 6;
 
     const daysInMonth = lastDayOfMonth.getDate();
@@ -461,7 +505,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cell.classList.add('selected');
       }
 
-      // Identificare tranzacții în ziua respectivă
       const dayTxs = transactions.filter(t => t.date === currentCellISO);
       const hasIncome = dayTxs.some(t => t.type === 'income');
       const hasExpense = dayTxs.some(t => t.type === 'expense');
@@ -485,9 +528,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cell.appendChild(dotsContainer);
       }
 
-      const txCount = dayTxs.length;
-      cell.setAttribute('aria-label', `${d} ${formatDateFormatted(currentCellISO)}, ${txCount} tranzacții`);
-
       cell.addEventListener('click', () => {
         selectedDayISO = currentCellISO;
         renderCalendar();
@@ -497,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
       calendarDaysGridEl.appendChild(cell);
     }
 
-    // 3. Zile din luna următoare pentru aliniere completă
+    // 3. Zile din luna următoare
     const totalCells = startDayOfWeek + daysInMonth;
     const remainingCells = (7 - (totalCells % 7)) % 7;
     for (let j = 1; j <= remainingCells; j++) {
@@ -513,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderDayDetails() {
     if (!selectedDayTitleEl || !dayTransactionsListEl) return;
 
-    selectedDayTitleEl.innerText = formatDateFormatted(selectedDayISO);
+    selectedDayTitleEl.innerText = formatDateFormatted(selectedDayISO).toUpperCase();
 
     const dayTxs = transactions.filter(t => t.date === selectedDayISO);
 
@@ -521,11 +561,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const expenses = dayTxs.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
     const net = income - expenses;
 
-    if (dayTotalIncomeEl) dayTotalIncomeEl.innerText = `+${formatCurrency(income)}`;
-    if (dayTotalExpensesEl) dayTotalExpensesEl.innerText = `-${formatCurrency(expenses)}`;
+    animateNumber(dayTotalIncomeEl, income);
+    animateNumber(dayTotalExpensesEl, expenses);
+    animateNumber(dayTotalNetEl, net);
+
     if (dayTotalNetEl) {
-      dayTotalNetEl.innerText = formatCurrency(net);
-      dayTotalNetEl.className = 'day-sum-val ' + (net >= 0 ? 'color-income' : 'color-expense');
+      dayTotalNetEl.className = 'day-sum-val numeric-accent ' + (net >= 0 ? 'color-income' : 'color-expense');
     }
 
     dayTransactionsListEl.innerHTML = '';
@@ -559,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="item-date">${displayDate}</span>
       </div>
       <div class="item-right">
-        <span class="item-amount ${amountClass}">${sign}${formatCurrency(t.amount)}</span>
+        <span class="item-amount numeric-accent ${amountClass}">${sign}${formatCurrency(t.amount)}</span>
         <button class="btn-delete-item" data-id="${t.id}" title="Șterge">&times;</button>
       </div>
     `;
@@ -612,7 +653,6 @@ document.addEventListener('DOMContentLoaded', () => {
       transactions.unshift(newTransaction);
       saveData();
 
-      // Sincronizare an, lună și zi selectată
       const [y, m] = date.split('-').map(Number);
       selectedYear = y;
       selectedMonth = m - 1;
@@ -633,7 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnReset) {
     btnReset.addEventListener('click', (e) => {
       e.preventDefault();
-      if (confirm('Ștergi toate datele?')) {
+      if (confirm('Resetezi toate datele înregistrate?')) {
         transactions = [];
         saveData();
         updateUI();

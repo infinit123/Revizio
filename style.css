@@ -1,47 +1,67 @@
-@import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+/* ==================================================
+   DESIGN TOKENS V2 & GLOBAL MOTION SYSTEM
+   ================================================== */
 :root {
-  /* Sistem Culori Apple Light Mode (Default) */
-  --ios-bg: #F2F2F7;
-  --ios-surface: #FFFFFF;
-  --ios-border: rgba(60, 60, 67, 0.12);
-  --ios-subtle-bg: #EFEFF4;
-  --ios-nav-bg: rgba(255, 255, 255, 0.85);
+  /* Depth & Surface Levels - Dark Space Base */
+  --surface-0: #06080d;
+  --surface-1: rgba(18, 24, 38, 0.75);
+  --surface-2: rgba(30, 41, 59, 0.65);
+  --surface-3: rgba(45, 60, 80, 0.85);
   
-  --ios-text-main: #000000;
-  --ios-text-muted: #8E8E93;
-  
-  --ios-blue: #007AFF;
-  --ios-blue-active: #0056B3;
-  --ios-green: #34C759;
-  --ios-red: #FF3B30;
-  --ios-red-soft: #FFEBEE;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-active: rgba(0, 242, 254, 0.3);
+  --nav-bg: rgba(10, 14, 23, 0.82);
 
-  --radius-card: 18px;
-  --radius-btn: 12px;
-  --radius-input: 10px;
+  /* Luminous Color Accents */
+  --color-cyan-glow: #00f2fe;
+  --color-blue-accent: #38ef7d;
+  --color-emerald: #10b981;
+  --color-rose: #f43f5e;
   
-  --shadow-ios: 0 4px 16px rgba(0, 0, 0, 0.04);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+
+  /* Hierarchy & Radius Tokens */
+  --radius-card: 20px;
+  --radius-btn: 12px;
+  --radius-input: 12px;
+  
+  /* Depth Shadows */
+  --shadow-level-1: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-level-2: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+  --glow-cyan: 0 0 20px rgba(0, 242, 254, 0.25);
+
+  /* Motion Tokens */
+  --motion-fast: 150ms;
+  --motion-normal: 280ms;
+  --motion-slow: 400ms;
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Paletă Culori Apple Dark Mode */
-html[data-theme="dark"] {
-  --ios-bg: #000000;
-  --ios-surface: #1C1C1E;
-  --ios-border: rgba(84, 84, 88, 0.65);
-  --ios-subtle-bg: #2C2C2E;
-  --ios-nav-bg: rgba(28, 28, 30, 0.85);
+html[data-theme="light"] {
+  --surface-0: #f1f5f9;
+  --surface-1: rgba(255, 255, 255, 0.85);
+  --surface-2: rgba(255, 255, 255, 0.95);
+  --surface-3: #ffffff;
   
-  --ios-text-main: #FFFFFF;
-  --ios-text-muted: #8E8E93;
-  
-  --ios-blue: #0A84FF;
-  --ios-blue-active: #0056B3;
-  --ios-green: #30D158;
-  --ios-red: #FF453A;
-  --ios-red-soft: rgba(255, 69, 58, 0.15);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-active: rgba(0, 122, 255, 0.4);
+  --nav-bg: rgba(255, 255, 255, 0.85);
 
-  --shadow-ios: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --color-cyan-glow: #0066ff;
+  --color-emerald: #059669;
+  --color-rose: #e11d48;
+  
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  --shadow-level-1: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-level-2: 0 10px 30px rgba(0, 0, 0, 0.1);
+  --glow-cyan: 0 0 15px rgba(0, 102, 255, 0.2);
 }
 
 *, *::before, *::after {
@@ -50,24 +70,32 @@ html[data-theme="dark"] {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", sans-serif;
-  background-color: var(--ios-bg);
-  color: var(--ios-text-main);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--surface-0);
+  color: var(--text-main);
   margin: 0;
   padding: 0;
-  line-height: 1.35;
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   user-select: none;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+  transition: background-color var(--motion-normal) ease, color var(--motion-normal) ease;
+}
+
+.numeric-accent {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.03em;
 }
 
 .app-container {
   max-width: 440px;
   margin: 0 auto;
-  padding: 16px 16px calc(85px + env(safe-area-inset-bottom)) 16px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px calc(90px + env(safe-area-inset-bottom)) 16px;
 }
 
-/* Header iOS */
+/* ==================================================
+   HEADER & COMMAND CENTER
+   ================================================== */
 .ios-header {
   margin-bottom: 20px;
   padding: 0 4px;
@@ -77,102 +105,162 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.system-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-cyan-glow);
+}
+
+.status-dot.pulse {
+  box-shadow: 0 0 8px var(--color-cyan-glow);
+  animation: pulseGlow 2s infinite alternate ease-in-out;
+}
+
+@keyframes pulseGlow {
+  0% { opacity: 0.4; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.2); }
 }
 
 .date-badge {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ios-text-muted);
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
 }
 
 .btn-clear {
   background: none;
   border: none;
-  color: var(--ios-red);
-  font-size: 13px;
-  font-weight: 500;
+  color: var(--color-rose);
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color var(--motion-fast) ease;
+}
+
+.btn-clear:active {
+  background: rgba(244, 63, 94, 0.15);
 }
 
 .ios-header h1 {
-  font-size: 34px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   margin: 0;
-}
-
-/* Bottom Navigation Bar Stil Apple */
-.ios-bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  min-height: 65px;
-  height: auto;
-  background: var(--ios-nav-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 0.5px solid var(--ios-border);
   display: flex;
-  justify-content: space-around;
-  align-items: center;
-  max-width: 440px;
-  margin: 0 auto;
-  z-index: 1000;
-  padding-top: 8px;
-  padding-bottom: max(10px, env(safe-area-inset-bottom));
-  box-sizing: border-box;
-  transition: background-color 0.3s ease;
+  align-items: baseline;
+  gap: 8px;
 }
 
-.nav-btn {
-  background: none;
-  border: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  color: var(--ios-text-muted);
-  cursor: pointer;
-  padding: 6px;
-  flex: 1;
-  transition: color 0.15s ease;
-}
-
-.nav-btn span {
+.version-tag {
   font-size: 10px;
-  font-weight: 500;
+  color: var(--color-cyan-glow);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.2);
 }
 
-.nav-btn.active {
-  color: var(--ios-blue);
-}
-
-/* Control afișare Tab-uri */
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
-}
-
-/* Carduri iOS */
+/* ==================================================
+   DEPTH CARDS & GLASSMORPHISM
+   ================================================== */
 .ios-card {
-  background: var(--ios-surface);
+  background: var(--surface-1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: var(--radius-card);
   padding: 20px;
-  box-shadow: var(--shadow-ios);
   margin-bottom: 16px;
-  border: 1px solid var(--ios-border);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-level-1);
+  transition: transform var(--motion-fast) var(--ease-emphasized), border-color var(--motion-normal) ease;
 }
 
-/* Selector Lunar iOS */
+.ios-card.depth-2 {
+  background: var(--surface-2);
+  box-shadow: var(--shadow-level-2);
+}
+
+.ios-card:active {
+  transform: scale(0.995);
+}
+
+/* Hero Financial Card */
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  background: linear-gradient(135deg, rgba(18, 24, 38, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%);
+}
+
+.hero-card-bg {
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(0, 242, 254, 0.12) 0%, rgba(0,0,0,0) 70%);
+  pointer-events: none;
+}
+
+.card-subtitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.balance-value {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-main);
+  margin-bottom: 10px;
+}
+
+.balance-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-emerald);
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.balance-card.negative .balance-status-badge {
+  color: var(--color-rose);
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* Selector Lunar */
 .month-selector-card {
   padding: 10px 16px;
 }
@@ -184,80 +272,24 @@ body {
 }
 
 .month-display {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .month-nav-btn {
   background: none;
   border: none;
-  color: var(--ios-blue);
-  font-size: 26px;
-  font-weight: 400;
+  color: var(--color-cyan-glow);
+  font-size: 24px;
   cursor: pointer;
   padding: 0 12px;
-  line-height: 1;
-  user-select: none;
-  transition: opacity 0.15s ease;
+  transition: transform var(--motion-fast) ease, opacity var(--motion-fast) ease;
 }
 
 .month-nav-btn:active {
-  opacity: 0.4;
-}
-
-.card-title {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin: 0 0 16px 0;
-}
-
-.card-header-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.card-header-flex .card-title {
-  margin: 0;
-}
-
-/* Balance Card */
-.balance-card {
-  background: var(--ios-surface);
-  transition: background-color 0.3s, color 0.3s;
-}
-
-.balance-card.negative {
-  background: var(--ios-red-soft);
-  border: 1px solid rgba(255, 59, 48, 0.2);
-}
-
-.card-subtitle {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ios-text-muted);
-  display: block;
-  margin-bottom: 6px;
-}
-
-.balance-value {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-}
-
-.balance-status {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ios-green);
-  margin-top: 6px;
-}
-
-.balance-card.negative .balance-status {
-  color: var(--ios-red);
+  transform: scale(0.85);
+  opacity: 0.6;
 }
 
 /* Metrics Grid */
@@ -272,23 +304,25 @@ body {
 }
 
 .metric-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ios-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .metric-value {
   font-size: 18px;
   font-weight: 700;
-  letter-spacing: -0.02em;
 }
 
-.color-income { color: var(--ios-green); }
-.color-expense { color: var(--ios-red); }
+.color-income { color: var(--color-emerald); }
+.color-expense { color: var(--color-rose); }
 
-/* STILURI NOI: CALENDAR FINANCIAR */
+/* ==================================================
+   CALENDAR FINANCIAR
+   ================================================== */
 .calendar-card {
   padding: 14px 12px;
 }
@@ -297,10 +331,10 @@ body {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ios-text-muted);
-  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 10px;
 }
 
 .calendar-days-grid {
@@ -315,41 +349,41 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 12px;
   cursor: pointer;
   position: relative;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
-  color: var(--ios-text-main);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 0;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 600;
   outline: none;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition: all var(--motion-fast) ease;
 }
 
 .cal-day-cell.other-month {
-  color: var(--ios-border);
-  opacity: 0.4;
+  color: var(--text-dim);
+  opacity: 0.3;
 }
 
 .cal-day-cell.today {
-  font-weight: 700;
-  color: var(--ios-blue);
-  background-color: var(--ios-subtle-bg);
+  color: var(--color-cyan-glow);
+  border-color: rgba(0, 242, 254, 0.3);
+  background: rgba(0, 242, 254, 0.05);
 }
 
 .cal-day-cell.selected {
-  background-color: var(--ios-blue) !important;
-  color: #FFFFFF !important;
+  background: var(--color-cyan-glow) !important;
+  color: #000000 !important;
+  font-weight: 800;
+  box-shadow: var(--glow-cyan);
 }
 
 .cal-dots-container {
   display: flex;
   gap: 3px;
   position: absolute;
-  bottom: 3px;
+  bottom: 4px;
 }
 
 .cal-dot {
@@ -358,17 +392,18 @@ body {
   border-radius: 50%;
 }
 
-.cal-dot.income { background-color: var(--ios-green); }
-.cal-dot.expense { background-color: var(--ios-red); }
-.cal-day-cell.selected .cal-dot { background-color: #FFFFFF !important; }
+.cal-dot.income { background-color: var(--color-emerald); }
+.cal-dot.expense { background-color: var(--color-rose); }
+.cal-day-cell.selected .cal-dot { background-color: #000000 !important; }
 
 .day-summary-row {
   display: flex;
   justify-content: space-around;
-  background: var(--ios-subtle-bg);
-  padding: 10px;
+  background: var(--surface-1);
+  padding: 12px;
   border-radius: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--glass-border);
 }
 
 .day-summary-item {
@@ -378,47 +413,51 @@ body {
 }
 
 .day-sum-label {
-  font-size: 11px;
-  color: var(--ios-text-muted);
-  font-weight: 500;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 700;
 }
 
 .day-sum-val {
   font-size: 13px;
   font-weight: 700;
+  margin-top: 2px;
 }
 
-/* Formular & Input-uri iOS */
+/* ==================================================
+   FORMULARE & INPUT-URI FUTURISTICE
+   ================================================== */
 .type-picker, .theme-picker {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: var(--ios-subtle-bg);
-  padding: 3px;
-  border-radius: 9px;
+  background: var(--surface-1);
+  padding: 4px;
+  border-radius: 14px;
   margin-bottom: 20px;
+  border: 1px solid var(--glass-border);
 }
 
 .theme-picker {
   grid-template-columns: 1fr 1fr 1fr;
-  margin-bottom: 0;
 }
 
 .picker-btn, .theme-btn {
   border: none;
   background: transparent;
-  padding: 9px 0;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  border-radius: 7px;
+  padding: 10px 0;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
   cursor: pointer;
-  color: var(--ios-text-main);
-  transition: all 0.2s ease;
+  color: var(--text-muted);
+  transition: all var(--motion-fast) ease;
 }
 
 .picker-btn.active, .theme-btn.active {
-  background: var(--ios-surface);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background: var(--surface-3);
+  color: var(--text-main);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border-active);
 }
 
 .form-item {
@@ -433,78 +472,84 @@ body {
 
 label {
   display: block;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ios-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
   margin-bottom: 6px;
   margin-left: 2px;
 }
 
-input, select {
+.input-futuristic {
   width: 100%;
   padding: 12px 14px;
-  font-size: 16px;
+  font-size: 14px;
   font-family: inherit;
-  background: var(--ios-subtle-bg);
-  border: 1px solid transparent;
+  background: var(--surface-1);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-input);
-  color: var(--ios-text-main);
+  color: var(--text-main);
   outline: none;
   appearance: none;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 
-input:focus, select:focus {
-  background: var(--ios-surface);
-  border-color: var(--ios-blue);
+.input-futuristic:focus {
+  border-color: var(--color-cyan-glow);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.15);
 }
 
 .small-select {
   width: auto;
   padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
 }
 
 .ios-btn-primary {
   width: 100%;
-  background: var(--ios-blue);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, var(--color-cyan-glow) 0%, #0072ff 100%);
+  color: #000000;
   border: none;
   padding: 14px;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   border-radius: var(--radius-btn);
   cursor: pointer;
-  margin-top: 8px;
-  transition: background-color 0.15s ease;
+  transition: transform var(--motion-fast) var(--ease-emphasized), opacity var(--motion-fast) ease;
 }
 
 .ios-btn-primary:active {
-  background: var(--ios-blue-active);
+  transform: scale(0.97);
+  opacity: 0.9;
 }
 
 .ios-btn-secondary {
   width: 100%;
-  background: var(--ios-subtle-bg);
-  color: var(--ios-red);
-  border: none;
+  background: var(--surface-1);
+  color: var(--color-rose);
+  border: 1px solid rgba(244, 63, 94, 0.3);
   padding: 14px;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
   border-radius: var(--radius-btn);
   cursor: pointer;
-  margin-top: 8px;
-  transition: background-color 0.15s ease;
+  transition: transform var(--motion-fast) ease;
 }
 
 .ios-btn-secondary:active {
-  background: var(--ios-red-soft);
+  transform: scale(0.97);
 }
 
-/* Lista Istoric Stil Grouped Table */
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ==================================================
+   LISTE ISTORIC & CATEGORII
+   ================================================== */
 .ios-list {
   list-style: none;
   padding: 0;
@@ -515,8 +560,8 @@ input:focus, select:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 0.5px solid var(--ios-border);
+  padding: 14px 0;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .ios-list-item:last-child {
@@ -529,19 +574,19 @@ input:focus, select:focus {
 }
 
 .item-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .item-category {
-  font-size: 12px;
-  color: var(--ios-text-muted);
+  font-size: 11px;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
 .item-date {
-  font-size: 11px;
-  color: var(--ios-text-muted);
+  font-size: 10px;
+  color: var(--text-dim);
   margin-top: 2px;
 }
 
@@ -552,131 +597,165 @@ input:focus, select:focus {
 }
 
 .item-amount {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .btn-delete-item {
   background: none;
   border: none;
-  color: var(--ios-text-muted);
+  color: var(--text-dim);
   font-size: 18px;
   cursor: pointer;
-  padding: 2px 6px;
-  opacity: 0.6;
+  padding: 4px;
+  transition: color var(--motion-fast) ease;
 }
 
 .btn-delete-item:hover {
-  opacity: 1;
-  color: var(--ios-red);
+  color: var(--color-rose);
 }
 
-/* Breakdown Categorii */
 .category-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: 10px 0;
   font-size: 13px;
-  border-bottom: 0.5px solid var(--ios-border);
+  border-bottom: 1px solid var(--glass-border);
 }
 
-.category-row:last-child {
-  border-bottom: none;
-}
-
-.cat-name {
-  color: var(--ios-text-main);
-  font-weight: 500;
-}
-
-.cat-val {
-  font-weight: 600;
-  color: var(--ios-text-muted);
-}
+.category-row:last-child { border-bottom: none; }
+.cat-name { font-weight: 600; color: var(--text-main); }
+.cat-val { font-weight: 700; color: var(--text-muted); }
 
 .empty-text {
-  font-size: 13px;
-  color: var(--ios-text-muted);
+  font-size: 12px;
+  color: var(--text-muted);
   text-align: center;
-  margin: 12px 0;
+  margin: 16px 0;
 }
 
-/* Styling Obiectiv Economisire */
+/* ==================================================
+   GOALS & PROGRESS
+   ================================================== */
+.goal-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.goal-title { font-weight: 700; font-size: 16px; }
+.goal-progress-num { font-size: 12px; color: var(--color-cyan-glow); font-weight: 700; }
+
 .goal-progress-bar {
   width: 100%;
-  height: 10px;
-  background-color: var(--ios-subtle-bg);
-  border-radius: 5px;
+  height: 8px;
+  background: var(--surface-1);
+  border-radius: 10px;
   overflow: hidden;
+  border: 1px solid var(--glass-border);
 }
 
 .goal-progress-fill {
   height: 100%;
-  background-color: var(--ios-blue);
-  border-radius: 5px;
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, var(--color-cyan-glow), #0072ff);
+  border-radius: 10px;
+  transition: width var(--motion-slow) var(--ease-emphasized);
 }
 
-/* Animații Apple */
-@keyframes iosCardFadeIn {
+/* ==================================================
+   FLOATING GLASS NAVIGATION
+   ================================================== */
+.ios-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: max(65px, calc(50px + env(safe-area-inset-bottom)));
+  background: var(--nav-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 440px;
+  margin: 0 auto;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  flex: 1;
+  transition: color var(--motion-fast) ease, transform var(--motion-fast) ease;
+}
+
+.nav-btn span { font-size: 9px; font-weight: 700; letter-spacing: 0.02em; }
+
+.nav-btn.active {
+  color: var(--color-cyan-glow);
+}
+
+.nav-btn:active {
+  transform: scale(0.9);
+}
+
+/* Tab Transitions */
+.tab-content { display: none; }
+.tab-content.active {
+  display: block;
+  animation: tabFadeIn var(--motion-normal) var(--ease-emphasized) forwards;
+}
+
+@keyframes tabFadeIn {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(8px) scale(0.99);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
-.tab-content.active .ios-card {
-  animation: iosCardFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
-.ios-btn-primary,
-.ios-btn-secondary,
-.picker-btn,
-.theme-btn,
-.nav-btn,
-.month-nav-btn,
-.btn-clear,
-.btn-delete-item,
-.cal-day-cell {
-  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease, background-color 0.15s ease;
+.glass-modal-content {
+  background: var(--surface-3);
+  border: 1px solid var(--glass-border-active);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-level-2);
 }
 
-.ios-btn-primary:active,
-.ios-btn-secondary:active,
-.picker-btn:active,
-.theme-btn:active,
-.cal-day-cell:active {
-  transform: scale(0.94);
-}
-
-.nav-btn:active,
-.month-nav-btn:active,
-.btn-clear:active {
-  transform: scale(0.92);
-}
-
+/* Reduced Motion Safety */
 @media (prefers-reduced-motion: reduce) {
-  .tab-content.active .ios-card {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-
-  .ios-btn-primary,
-  .ios-btn-secondary,
-  .picker-btn,
-  .theme-btn,
-  .nav-btn,
-  .month-nav-btn,
-  .btn-clear,
-  .btn-delete-item,
-  .cal-day-cell {
-    transition: none !important;
-    transform: none !important;
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
