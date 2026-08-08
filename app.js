@@ -31,6 +31,29 @@ function showUpdateModal() {
   }
 }
 
+// Helper pentru obținerea datei curente în format ISO YYYY-MM-DD
+function getTodayISOString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Helper pentru formatare localizată a datei (ex: "08 august 2026")
+function formatDateFormatted(isoDateString) {
+  if (!isoDateString) return '';
+  const [year, month, day] = isoDateString.split('-');
+  if (!year || !month || !day) return isoDateString;
+  
+  const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
+  return dateObj.toLocaleDateString('ro-RO', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
 // 2. Stare Aplicație & Date
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let savingsGoal = JSON.parse(localStorage.getItem('savingsGoal')) || { title: 'Vacanță', target: 2000, current: 0 };
@@ -180,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const txDescInput = document.getElementById('tx-description');
   const txAmountInput = document.getElementById('tx-amount');
   const txCategoryInput = document.getElementById('tx-category');
+  const txDateInput = document.getElementById('tx-date');
 
   const transactionListEl = document.getElementById('transaction-list');
   const filterCategoryEl = document.getElementById('filter-category');
@@ -190,6 +214,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
     const options = { weekday: 'long', day: 'numeric', month: 'short' };
     currentDateEl.innerText = now.toLocaleDateString('ro-RO', options);
+  }
+
+  // Setare valoare implicită pentru câmpul de dată la deschiderea/încărcarea formularului
+  if (txDateInput) {
+    txDateInput.value = getTodayISOString();
   }
 
   // 4. Navigare Tab-uri
@@ -208,6 +237,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetEl = document.getElementById(targetId);
       if (targetEl) {
         targetEl.classList.add('active');
+      }
+
+      // Resetare/setare dată la deschiderea tab-ului de adăugare
+      if (targetId === 'sec-add' && txDateInput && !txDateInput.value) {
+        txDateInput.value = getTodayISOString();
       }
     });
   });
@@ -319,11 +353,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const isIncome = t.type === 'income';
       const amountClass = isIncome ? 'color-income' : 'color-expense';
       const sign = isIncome ? '+' : '-';
+      
+      // Fallback pentru tranzacțiile vechi care nu au câmpul date
+      const displayDate = t.date ? formatDateFormatted(t.date) : 'Dată necunoscută';
 
       li.innerHTML = `
         <div class="item-left">
           <span class="item-title">${t.description}</span>
           <span class="item-category">${t.category}</span>
+          <span class="item-date">${displayDate}</span>
         </div>
         <div class="item-right">
           <span class="item-amount ${amountClass}">${sign}${formatCurrency(t.amount)}</span>
@@ -353,15 +391,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const amount = parseFloat(txAmountInput.value);
       const type = txTypeInput.value;
       const category = txCategoryInput.value;
+      const date = txDateInput ? txDateInput.value : getTodayISOString();
 
-      if (!description || isNaN(amount) || amount <= 0) return;
+      if (!description || isNaN(amount) || amount <= 0 || !date) return;
 
       const newTransaction = {
         id: Date.now(),
         description,
         amount,
         type,
-        category
+        category,
+        date
       };
 
       transactions.unshift(newTransaction);
@@ -370,6 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       txDescInput.value = '';
       txAmountInput.value = '';
+      if (txDateInput) txDateInput.value = getTodayISOString();
 
       const defaultTab = document.querySelector('[data-target="sec-dashboard"]');
       if (defaultTab) defaultTab.click();
