@@ -7,9 +7,75 @@ if ('serviceWorker' in navigator) {
 
 // 2. Stare Aplicație & Date
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+let savingsGoal = JSON.parse(localStorage.getItem('savingsGoal')) || { title: 'Vacanță', target: 2000, current: 0 };
 
 // 3. Execuție după încărcarea completă a structurii DOM
 document.addEventListener('DOMContentLoaded', () => {
+  // --- LOGICĂ OBIECTIV ECONOMISIRE ---
+  const goalTitleText = document.getElementById('goal-title-text');
+  const goalProgressText = document.getElementById('goal-progress-text');
+  const goalProgressFill = document.getElementById('goal-progress-fill');
+  const btnEditGoal = document.getElementById('btn-edit-goal');
+  const goalDisplay = document.getElementById('goal-display');
+  const goalForm = document.getElementById('goal-form');
+  const goalNameInput = document.getElementById('goal-name-input');
+  const goalTargetInput = document.getElementById('goal-target-input');
+  const btnCancelGoal = document.getElementById('btn-cancel-goal');
+  const btnAddToGoal = document.getElementById('btn-add-to-goal');
+  const goalAddAmount = document.getElementById('goal-add-amount');
+
+  function updateGoalUI() {
+    if (!goalTitleText) return;
+    goalTitleText.innerText = savingsGoal.title;
+    goalProgressText.innerText = `${formatCurrency(savingsGoal.current)} / ${formatCurrency(savingsGoal.target)}`;
+    
+    let percentage = (savingsGoal.current / savingsGoal.target) * 100;
+    if (percentage > 100) percentage = 100;
+    goalProgressFill.style.width = `${percentage}%`;
+
+    localStorage.setItem('savingsGoal', JSON.stringify(savingsGoal));
+  }
+
+  if (btnEditGoal) {
+    btnEditGoal.addEventListener('click', () => {
+      goalNameInput.value = savingsGoal.title;
+      goalTargetInput.value = savingsGoal.target;
+      goalDisplay.style.display = 'none';
+      goalForm.style.display = 'block';
+    });
+  }
+
+  if (btnCancelGoal) {
+    btnCancelGoal.addEventListener('click', () => {
+      goalForm.style.display = 'none';
+      goalDisplay.style.display = 'block';
+    });
+  }
+
+  if (goalForm) {
+    goalForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      savingsGoal.title = goalNameInput.value.trim() || 'Obiectiv';
+      savingsGoal.target = parseFloat(goalTargetInput.value) || 100;
+      updateGoalUI();
+      goalForm.style.display = 'none';
+      goalDisplay.style.display = 'block';
+    });
+  }
+
+  if (btnAddToGoal) {
+    btnAddToGoal.addEventListener('click', () => {
+      const val = parseFloat(goalAddAmount.value);
+      if (!isNaN(val) && val > 0) {
+        savingsGoal.current += val;
+        goalAddAmount.value = '';
+        updateGoalUI();
+      }
+    });
+  }
+
+  // Inițializare interfață obiectiv
+  updateGoalUI();
 
   // Elemente DOM
   const balanceEl = document.getElementById('balance');
