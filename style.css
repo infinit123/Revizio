@@ -1,1 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+:root {
+  --font-main: 'Inter', sans-serif;
+  --color-bg: #FAFAFA;
+  --color-text-main: #09090B;
+  --color-primary: #18181B;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+}
+
+.btn {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 10px 18px;
+}
