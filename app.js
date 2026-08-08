@@ -59,6 +59,11 @@ let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let savingsGoal = JSON.parse(localStorage.getItem('savingsGoal')) || { title: 'Vacanță', target: 2000, current: 0 };
 let currentTheme = localStorage.getItem('appTheme') || 'auto';
 
+// Stare Navigare Lunarã (An și Lună selectate implicit = luna curentă)
+const nowInitial = new Date();
+let selectedYear = nowInitial.getFullYear();
+let selectedMonth = nowInitial.getMonth(); // 0 = Ianuarie, 11 = Decembrie
+
 // 3. Execuție după încărcarea completă a structurii DOM
 document.addEventListener('DOMContentLoaded', () => {
   // Event listener buton actualizare din Pop-Up
@@ -190,13 +195,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateGoalUI();
 
-  // Elemente DOM
+  // Elemente DOM Dashboard & Formular
   const balanceEl = document.getElementById('balance');
   const balanceCardEl = document.getElementById('balance-card');
   const balanceStatusEl = document.getElementById('balance-status');
   const totalIncomeEl = document.getElementById('total-income');
   const totalExpensesEl = document.getElementById('total-expenses');
   const categoryBreakdownEl = document.getElementById('category-breakdown');
+
+  const btnPrevMonth = document.getElementById('btn-prev-month');
+  const btnNextMonth = document.getElementById('btn-next-month');
+  const currentMonthDisplay = document.getElementById('current-month-display');
 
   const form = document.getElementById('transaction-form');
   const txTypeInput = document.getElementById('tx-type');
@@ -216,9 +225,49 @@ document.addEventListener('DOMContentLoaded', () => {
     currentDateEl.innerText = now.toLocaleDateString('ro-RO', options);
   }
 
-  // Setare valoare implicită pentru câmpul de dată la deschiderea/încărcarea formularului
   if (txDateInput) {
     txDateInput.value = getTodayISOString();
+  }
+
+  // --- LOGICĂ NAVIGARE LUNARĂ ---
+  function updateMonthDisplay() {
+    if (!currentMonthDisplay) return;
+    const dateObj = new Date(selectedYear, selectedMonth, 1);
+    const monthName = dateObj.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
+    currentMonthDisplay.innerText = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  }
+
+  if (btnPrevMonth) {
+    btnPrevMonth.addEventListener('click', () => {
+      selectedMonth--;
+      if (selectedMonth < 0) {
+        selectedMonth = 11;
+        selectedYear--;
+      }
+      updateMonthDisplay();
+      updateUI();
+    });
+  }
+
+  if (btnNextMonth) {
+    btnNextMonth.addEventListener('click', () => {
+      selectedMonth++;
+      if (selectedMonth > 11) {
+        selectedMonth = 0;
+        selectedYear++;
+      }
+      updateMonthDisplay();
+      updateUI();
+    });
+  }
+
+  // Helper filtrare tranzacții pentru luna curentă selectată
+  function getMonthlyTransactions() {
+    return transactions.filter(t => {
+      if (!t.date) return false;
+      const [y, m] = t.date.split('-').map(Number);
+      return y === selectedYear && (m - 1) === selectedMonth;
+    });
   }
 
   // 4. Navigare Tab-uri
@@ -239,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
         targetEl.classList.add('active');
       }
 
-      // Resetare/setare dată la deschiderea tab-ului de adăugare
       if (targetId === 'sec-add' && txDateInput && !txDateInput.value) {
         txDateInput.value = getTodayISOString();
       }
@@ -274,13 +322,15 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace('RON', 'LEI');
   }
 
-  // 6. Actualizare Interfață
+  // 6. Actualizare Interfață Dashboard & Istoric
   function updateUI() {
-    const income = transactions
+    const monthlyData = getMonthlyTransactions();
+
+    const income = monthlyData
       .filter(t => t.type === 'income')
       .reduce((acc, t) => acc + t.amount, 0);
 
-    const expenses = transactions
+    const expenses = monthlyData
       .filter(t => t.type === 'expense')
       .reduce((acc, t) => acc + t.amount, 0);
 
@@ -293,23 +343,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (balanceCardEl && balanceStatusEl) {
       if (balance < 0) {
         balanceCardEl.classList.add('negative');
-        balanceStatusEl.innerText = 'Buget depășit';
+        balanceStatusEl.innerText = 'Buget depășit în această lună';
       } else {
         balanceCardEl.classList.remove('negative');
         balanceStatusEl.innerText = 'Buget stabil';
       }
     }
 
-    updateCategoryBreakdown();
+    updateCategoryBreakdown(monthlyData);
     renderTransactionList();
   }
 
-  function updateCategoryBreakdown() {
+  function updateCategoryBreakdown(monthlyData) {
     if (!categoryBreakdownEl) return;
-    const expenses = transactions.filter(t => t.type === 'expense');
+    const expenses = monthlyData.filter(t => t.type === 'expense');
     
     if (expenses.length === 0) {
-      categoryBreakdownEl.innerHTML = '<p class="empty-text">Nicio cheltuială înregistrată.</p>';
+      categoryBreakdownEl.innerHTML = '<p class="empty-text">Nicio cheltuială înregistrată în această lună.</p>';
       return;
     }
 
@@ -354,7 +404,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const amountClass = isIncome ? 'color-income' : 'color-expense';
       const sign = isIncome ? '+' : '-';
       
-      // Fallback pentru tranzacțiile vechi care nu au câmpul date
       const displayDate = t.date ? formatDateFormatted(t.date) : 'Dată necunoscută';
 
       li.innerHTML = `
@@ -406,6 +455,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       transactions.unshift(newTransaction);
       saveData();
+
+      // Setează automat luna vizualizată la luna în care s-a adăugat tranzacția
+      const [y, m] = date.split('-').map(Number);
+      selectedYear = y;
+      selectedMonth = m - 1;
+
+      updateMonthDisplay();
       updateUI();
 
       txDescInput.value = '';
@@ -436,5 +492,6 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('transactions', JSON.stringify(transactions));
   }
 
+  updateMonthDisplay();
   updateUI();
 });
