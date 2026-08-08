@@ -1,4 +1,4 @@
-const CACHE_NAME = 'buget-ios-v3';
+const CACHE_NAME = 'buget-ios-v3.0.3';
 const ASSETS = [
   './',
   './index.html',
