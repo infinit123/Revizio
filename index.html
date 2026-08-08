@@ -2,8 +2,8 @@
 <html lang="ro">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Life Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Finance</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#F2F2F7">
@@ -14,75 +14,119 @@
 </head>
 <body>
 
-  <main class="app-container">
+  <div class="app-container">
     
-    <header class="app-header">
+    <!-- Header iOS -->
+    <header class="ios-header">
+      <div class="header-top">
+        <span class="date-badge" id="current-date">Astăzi</span>
+        <button class="btn-clear" id="btn-reset" title="Resetează Datele">Șterge Tot</button>
+      </div>
       <h1>Finanțe</h1>
-      <span class="status-tag">Personal</span>
     </header>
 
-    <!-- Rezumat -->
-    <section class="summary-grid">
-      <div class="card summary-card primary-card">
-        <span class="card-label">Balanță Totală</span>
-        <div class="card-value" id="balance">0,00 LEI</div>
+    <!-- Navigare Stil Tab-uri Apple -->
+    <nav class="ios-segmented-nav">
+      <button class="seg-btn active" data-target="sec-dashboard">General</button>
+      <button class="seg-btn" data-target="sec-add">Adaugă</button>
+      <button class="seg-btn" data-target="sec-history">Istoric</button>
+    </nav>
+
+    <!-- SECȚIUNEA 1: DASHBOARD / GENERAL -->
+    <section id="sec-dashboard" class="tab-content active">
+      <!-- Balance Card -->
+      <div class="ios-card balance-card" id="balance-card">
+        <span class="card-subtitle">Balanță Disponibilă</span>
+        <div class="balance-value" id="balance">0,00 LEI</div>
+        <div class="balance-status" id="balance-status">Buget stabil</div>
       </div>
-      <div class="card summary-card">
-        <span class="card-label">Venituri</span>
-        <div class="card-value color-income" id="total-income">0,00 LEI</div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="ios-card metric-card">
+          <span class="metric-label">Venituri</span>
+          <div class="metric-value color-income" id="total-income">0,00 LEI</div>
+        </div>
+        <div class="ios-card metric-card">
+          <span class="metric-label">Cheltuieli</span>
+          <div class="metric-value color-expense" id="total-expenses">0,00 LEI</div>
+        </div>
       </div>
-      <div class="card summary-card">
-        <span class="card-label">Cheltuieli</span>
-        <div class="card-value color-expense" id="total-expenses">0,00 LEI</div>
+
+      <!-- Sumar Categorie Top -->
+      <div class="ios-card">
+        <h3 class="card-title">Categorii Principale</h3>
+        <div class="category-breakdown" id="category-breakdown">
+          <p class="empty-text">Nu există date suficiente.</p>
+        </div>
       </div>
     </section>
 
-    <!-- Formular Adăugare -->
-    <section class="card form-section">
-      <h2>Adaugă Tranzacție</h2>
-      
-      <!-- Segmented Control stil Apple -->
-      <div class="type-toggle">
-        <button type="button" class="type-btn active" id="btn-expense" onclick="setType('expense')">Cheltuială</button>
-        <button type="button" class="type-btn" id="btn-income" onclick="setType('income')">Venit</button>
-      </div>
-
-      <form id="transaction-form">
-        <input type="hidden" id="type" value="expense">
-
-        <div class="form-group">
-          <label for="description">Descriere</label>
-          <input type="text" id="description" placeholder="ex: Chirie, Salariu, Cumpărături" required autocomplete="off">
+    <!-- SECȚIUNEA 2: ADAUGĂ TRANZACȚIE -->
+    <section id="sec-add" class="tab-content">
+      <div class="ios-card">
+        <h3 class="card-title">Tranzacție Nouă</h3>
+        
+        <!-- Toggle Tip -->
+        <div class="type-picker">
+          <button type="button" class="picker-btn active" id="pick-expense">Cheltuială</button>
+          <button type="button" class="picker-btn" id="pick-income">Venit</button>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="amount">Sumă (LEI)</label>
-            <input type="number" id="amount" step="0.01" placeholder="0.00" required>
+        <form id="transaction-form">
+          <input type="hidden" id="tx-type" value="expense">
+
+          <div class="form-item">
+            <label for="tx-description">Titlu</label>
+            <input type="text" id="tx-description" placeholder="ex: Cumpărături, Chirie, Salariu" required autocomplete="off">
           </div>
 
-          <div class="form-group">
-            <label for="category">Categorie</label>
-            <select id="category">
-              <option value="Fixe">Fixe (Chirie/Rate/Utilități)</option>
-              <option value="Variabile">Variabile (Mâncare/Timp Liber)</option>
-              <option value="Venit">Venit (Salariu/Freelance)</option>
-              <option value="Economii">Economii / Investiții</option>
-            </select>
+          <div class="form-row">
+            <div class="form-item">
+              <label for="tx-amount">Sumă (LEI)</label>
+              <input type="number" id="tx-amount" step="0.01" placeholder="0.00" required>
+            </div>
+
+            <div class="form-item">
+              <label for="tx-category">Categorie</label>
+              <select id="tx-category">
+                <option value="Locuință & Utilități">Locuință & Utilități</option>
+                <option value="Mâncare & Cumpărături">Mâncare & Cumpărături</option>
+                <option value="Transport">Transport</option>
+                <option value="Abonamente & Servicii">Abonamente & Servicii</option>
+                <option value="Timp Liber & Ieșiri">Timp Liber & Ieșiri</option>
+                <option value="Venituri & Salariu">Venituri & Salariu</option>
+                <option value="Economii & Investiții">Economii & Investiții</option>
+              </select>
+            </div>
           </div>
+
+          <button type="submit" class="ios-btn-primary">Salvează</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- SECȚIUNEA 3: ISTORIC -->
+    <section id="sec-history" class="tab-content">
+      <div class="ios-card">
+        <div class="card-header-flex">
+          <h3 class="card-title">Toate Tranzacțiile</h3>
+          <select id="filter-category" class="small-select">
+            <option value="all">Toate Categoriile</option>
+            <option value="Locuință & Utilități">Locuință & Utilități</option>
+            <option value="Mâncare & Cumpărături">Mâncare & Cumpărături</option>
+            <option value="Transport">Transport</option>
+            <option value="Abonamente & Servicii">Abonamente & Servicii</option>
+            <option value="Timp Liber & Ieșiri">Timp Liber & Ieșiri</option>
+            <option value="Venituri & Salariu">Venituri & Salariu</option>
+            <option value="Economii & Investiții">Economii & Investiții</option>
+          </select>
         </div>
-
-        <button type="submit" class="btn-primary">Adaugă</button>
-      </form>
+        <ul class="ios-list" id="transaction-list"></ul>
+      </div>
     </section>
 
-    <!-- Lista Tranzacții -->
-    <section class="card list-section">
-      <h2>Istoric</h2>
-      <ul id="transaction-list" class="transaction-list"></ul>
-    </section>
-
-  </main>
+  </div>
 
   <script src="app.js"></script>
 </body>
