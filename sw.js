@@ -1,4 +1,4 @@
-const CACHE_NAME = 'buget-ios-v1';
+const CACHE_NAME = 'buget-ios-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -7,8 +7,8 @@ const ASSETS = [
   './manifest.json'
 ];
 
-// Salvare resurse în Cache la instalare
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
@@ -16,7 +16,6 @@ self.addEventListener('install', (e) => {
   );
 });
 
-// Ștergere cache vechi
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
@@ -27,15 +26,26 @@ self.addEventListener('activate', (e) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Servire din Cache când nu există conexiune
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      return cachedResponse || fetch(e.request);
-    })
+    fetch(e.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, responseClone));
+        }
+        return networkResponse;
+      })
+      .catch(() => caches.match(e.request))
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });

@@ -14,6 +14,19 @@
 </head>
 <body>
 
+  <!-- Modal Pop-Up Actualizare iOS -->
+  <div id="update-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--ios-surface, #fff); border-radius: 14px; max-width: 300px; width: 100%; text-align: center; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+      <div style="padding: 20px 16px;">
+        <h3 style="margin: 0 0 8px 0; font-size: 17px; font-weight: 600;">Actualizare Disponibilă</h3>
+        <p style="margin: 0; font-size: 13px; color: var(--ios-text-muted, #8e8e93);">O nouă versiune a aplicației este gata de instalare.</p>
+      </div>
+      <div style="display: flex; border-top: 0.5px solid var(--ios-border, rgba(60,60,67,0.12));">
+        <button id="btn-update-app" style="width: 100%; padding: 12px; border: none; background: transparent; color: var(--ios-blue, #007aff); font-weight: 600; font-size: 17px; cursor: pointer;">Actualizează</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app-container">
     
     <!-- Header iOS -->
