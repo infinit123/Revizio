@@ -1,11 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Sistem Culori Apple Light Mode */
+  /* Sistem Culori Apple Light Mode (Default) */
   --ios-bg: #F2F2F7;
   --ios-surface: #FFFFFF;
   --ios-border: rgba(60, 60, 67, 0.12);
   --ios-subtle-bg: #EFEFF4;
+  --ios-nav-bg: rgba(255, 255, 255, 0.85);
   
   --ios-text-main: #000000;
   --ios-text-muted: #8E8E93;
@@ -23,6 +24,26 @@
   --shadow-ios: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
+/* Paletă Culori Apple Dark Mode */
+html[data-theme="dark"] {
+  --ios-bg: #000000;
+  --ios-surface: #1C1C1E;
+  --ios-border: rgba(84, 84, 88, 0.65);
+  --ios-subtle-bg: #2C2C2E;
+  --ios-nav-bg: rgba(28, 28, 30, 0.85);
+  
+  --ios-text-main: #FFFFFF;
+  --ios-text-muted: #8E8E93;
+  
+  --ios-blue: #0A84FF;
+  --ios-blue-active: #0056B3;
+  --ios-green: #30D158;
+  --ios-red: #FF453A;
+  --ios-red-soft: rgba(255, 69, 58, 0.15);
+
+  --shadow-ios: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -37,12 +58,13 @@ body {
   line-height: 1.35;
   -webkit-font-smoothing: antialiased;
   user-select: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .app-container {
   max-width: 440px;
   margin: 0 auto;
-  padding: 16px 16px 90px 16px; /* Spațiere adăugată jos pentru bara de navigare */
+  padding: 16px 16px 90px 16px;
 }
 
 /* Header iOS */
@@ -90,7 +112,7 @@ body {
   left: 0;
   right: 0;
   height: 65px;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--ios-nav-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 0.5px solid var(--ios-border);
@@ -101,6 +123,7 @@ body {
   margin: 0 auto;
   z-index: 1000;
   padding-bottom: env(safe-area-inset-bottom);
+  transition: background-color 0.3s ease;
 }
 
 .nav-btn {
@@ -142,7 +165,8 @@ body {
   padding: 20px;
   box-shadow: var(--shadow-ios);
   margin-bottom: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.01);
+  border: 1px solid var(--ios-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .card-title {
@@ -228,7 +252,7 @@ body {
 .color-expense { color: var(--ios-red); }
 
 /* Formular & Input-uri iOS */
-.type-picker {
+.type-picker, .theme-picker {
   display: grid;
   grid-template-columns: 1fr 1fr;
   background: var(--ios-subtle-bg);
@@ -237,7 +261,12 @@ body {
   margin-bottom: 20px;
 }
 
-.picker-btn {
+.theme-picker {
+  grid-template-columns: 1fr 1fr 1fr;
+  margin-bottom: 0;
+}
+
+.picker-btn, .theme-btn {
   border: none;
   background: transparent;
   padding: 9px 0;
@@ -250,7 +279,7 @@ body {
   transition: all 0.2s ease;
 }
 
-.picker-btn.active {
+.picker-btn.active, .theme-btn.active {
   background: var(--ios-surface);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
@@ -277,7 +306,7 @@ label {
 input, select {
   width: 100%;
   padding: 12px 14px;
-  font-size: 16px; /* Împiedică zoom-ul pe iOS */
+  font-size: 16px;
   font-family: inherit;
   background: var(--ios-subtle-bg);
   border: 1px solid transparent;

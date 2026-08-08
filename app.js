@@ -8,9 +8,54 @@ if ('serviceWorker' in navigator) {
 // 2. Stare Aplicație & Date
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let savingsGoal = JSON.parse(localStorage.getItem('savingsGoal')) || { title: 'Vacanță', target: 2000, current: 0 };
+let currentTheme = localStorage.getItem('appTheme') || 'auto';
 
 // 3. Execuție după încărcarea completă a structurii DOM
 document.addEventListener('DOMContentLoaded', () => {
+  // --- LOGICĂ SCHIMBARE TEMĂ (DARK / LIGHT / SYSTEM) ---
+  const themeBtns = document.querySelectorAll('.theme-btn');
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function applyTheme(theme) {
+    currentTheme = theme;
+    localStorage.setItem('appTheme', theme);
+
+    // Actualizare stări butoane
+    themeBtns.forEach(btn => {
+      if (btn.getAttribute('data-theme-val') === theme) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // Aplicare atribut HTML
+    if (theme === 'auto') {
+      const systemIsDark = mediaQuery.matches;
+      document.documentElement.setAttribute('data-theme', systemIsDark ? 'dark' : 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }
+
+  // Ascultă modificările la nivel de sistem când e pe "auto"
+  mediaQuery.addEventListener('change', (e) => {
+    if (currentTheme === 'auto') {
+      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+    }
+  });
+
+  // Event listeneri pentru butoanele de temă
+  themeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedTheme = btn.getAttribute('data-theme-val');
+      applyTheme(selectedTheme);
+    });
+  });
+
+  // Inițializare temă la start
+  applyTheme(currentTheme);
+
   // --- LOGICĂ OBIECTIV ECONOMISIRE ---
   const goalTitleText = document.getElementById('goal-title-text');
   const goalProgressText = document.getElementById('goal-progress-text');
