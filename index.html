@@ -43,6 +43,45 @@
 
       <!-- Quick Metrics Grid -->
       <div class="metrics-grid">
+        <!-- Modul Obiective de Economisire -->
+<div class="ios-card">
+  <div class="card-header-flex">
+    <h2 class="card-title">Obiectiv Economisire</h2>
+    <button id="btn-edit-goal" class="btn-clear">Setează</button>
+  </div>
+  
+  <div id="goal-display">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+      <span id="goal-title-text" style="font-weight: 600; font-size: 15px;">Vacanță</span>
+      <span id="goal-progress-text" style="font-size: 13px; color: var(--ios-text-muted); font-weight: 500;">0 / 0 LEI</span>
+    </div>
+    
+    <div class="goal-progress-bar">
+      <div id="goal-progress-fill" class="goal-progress-fill" style="width: 0%;"></div>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-top: 12px;">
+      <input type="number" id="goal-add-amount" placeholder="Suma" style="padding: 8px 10px; font-size: 14px;">
+      <button id="btn-add-to-goal" class="ios-btn-primary" style="margin: 0; padding: 8px 14px; width: auto; font-size: 14px;">+ Adaugă</button>
+    </div>
+  </div>
+
+  <!-- Formular ascuns pentru editare Obiectiv -->
+  <form id="goal-form" style="display: none; margin-top: 10px;">
+    <div class="form-item">
+      <label>Nume Obiectiv</label>
+      <input type="text" id="goal-name-input" placeholder="ex: Fond urgență, Laptop..." required>
+    </div>
+    <div class="form-item">
+      <label>Suma Țintă (LEI)</label>
+      <input type="number" id="goal-target-input" placeholder="ex: 3000" min="1" required>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button type="submit" class="ios-btn-primary" style="margin: 0; padding: 10px; font-size: 14px;">Salvează</button>
+      <button type="button" id="btn-cancel-goal" class="picker-btn" style="padding: 10px;">Anulează</button>
+    </div>
+  </form>
+</div>
         <div class="ios-card metric-card">
           <span class="metric-label">Venituri</span>
           <div class="metric-value color-income" id="total-income">0,00 LEI</div>
