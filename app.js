@@ -1,13 +1,11 @@
-// 1. Inregistrare Service Worker PWA
+// Service Worker PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('PWA Service Worker activat.'))
-      .catch((err) => console.error('Eroare PWA:', err));
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
 
-// 2. Elemente DOM
+// Elemente DOM
 const form = document.getElementById('transaction-form');
 const descriptionInput = document.getElementById('description');
 const amountInput = document.getElementById('amount');
@@ -19,20 +17,36 @@ const totalExpensesEl = document.getElementById('total-expenses');
 const balanceEl = document.getElementById('balance');
 const transactionListEl = document.getElementById('transaction-list');
 
-// 3. Preluare tranzactii din LocalStorage
+// Preluare date
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 
-// Formatează numerele în LEI
+// Comutator Segmented Control (Venit / Cheltuială)
+window.setType = function(selectedType) {
+  typeInput.value = selectedType;
+  
+  const btnExpense = document.getElementById('btn-expense');
+  const btnIncome = document.getElementById('btn-income');
+
+  if (selectedType === 'expense') {
+    btnExpense.classList.add('active');
+    btnIncome.classList.remove('active');
+    categoryInput.value = 'Variabile';
+  } else {
+    btnIncome.classList.add('active');
+    btnExpense.classList.remove('active');
+    categoryInput.value = 'Venit';
+  }
+};
+
+// Formatare Monedă
 function formatCurrency(amount) {
   return new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' })
     .format(amount)
     .replace('RON', 'LEI');
 }
 
-// 4. Actualizează rezumatul și lista din interfață
+// Actualizare Interfață
 function updateUI() {
-  const amounts = transactions.map(t => t.type === 'income' ? t.amount : -t.amount);
-  
   const income = transactions
     .filter(t => t.type === 'income')
     .reduce((acc, t) => acc + t.amount, 0);
@@ -47,17 +61,16 @@ function updateUI() {
   totalExpensesEl.innerText = formatCurrency(expenses);
   balanceEl.innerText = formatCurrency(balance);
 
-  // Generare lista
   transactionListEl.innerHTML = '';
 
   if (transactions.length === 0) {
-    transactionListEl.innerHTML = '<li class="empty-state">Nicio tranzacție înregistrată.</li>';
+    transactionListEl.innerHTML = '<li class="empty-state">Nicio tranzacție adăugată.</li>';
     return;
   }
 
   transactions.forEach((t) => {
     const li = document.createElement('li');
-    li.classList.add('transaction-item');
+    li.className = 'transaction-item';
 
     const isIncome = t.type === 'income';
     const amountClass = isIncome ? 'color-income' : 'color-expense';
@@ -78,7 +91,7 @@ function updateUI() {
   });
 }
 
-// 5. Adaugare tranzactie
+// Adăugare Tranzacție
 form.addEventListener('submit', (e) => {
   e.preventDefault();
 
@@ -97,27 +110,22 @@ form.addEventListener('submit', (e) => {
     category
   };
 
-  transactions.unshift(transaction); // Adaugă la începutul listei
-  saveData();
+  transactions.unshift(transaction);
+  localStorage.setItem('transactions', JSON.stringify(transactions));
+  
   updateUI();
 
   // Resetare câmpuri
   descriptionInput.value = '';
   amountInput.value = '';
-  descriptionInput.focus();
 });
 
-// 6. Stergere tranzactie
+// Ștergere Tranzacție
 window.removeTransaction = function(id) {
   transactions = transactions.filter(t => t.id !== id);
-  saveData();
+  localStorage.setItem('transactions', JSON.stringify(transactions));
   updateUI();
 };
 
-// 7. Salvare in localStorage
-function saveData() {
-  localStorage.setItem('transactions', JSON.stringify(transactions));
-}
-
-// Ințializare la lansare
+// Inițializare
 updateUI();
