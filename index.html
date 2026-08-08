@@ -2,14 +2,91 @@
 <html lang="ro">
 <head>
   <meta charset="UTF-8">
-  <title>Aplicația Mea</title>
-  <!-- Această linie leagă HTML-ul de fișierul CSS -->
-  <link rel="stylesheet" href="style.css"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Life Manager</title>
+  
+  <!-- Configurații PWA și Stil -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#18181B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="card">
-    <h1>Sistem de Design Minimalist</h1>
-    <button class="btn">Acțiune Principală</button>
-  </div>
+
+  <main class="app-container">
+    
+    <!-- Antet Aplicație -->
+    <header class="app-header">
+      <h1>Finanțe Personale</h1>
+      <span class="status-tag">Uz Personal</span>
+    </header>
+
+    <!-- 1. Carduri de Rezumat -->
+    <section class="summary-grid">
+      <div class="card summary-card">
+        <span class="card-label">Venituri Total</span>
+        <div class="card-value color-income" id="total-income">0,00 LEI</div>
+      </div>
+      <div class="card summary-card">
+        <span class="card-label">Cheltuieli Total</span>
+        <div class="card-value color-expense" id="total-expenses">0,00 LEI</div>
+      </div>
+      <div class="card summary-card primary-card">
+        <span class="card-label">Balanță Rămasă</span>
+        <div class="card-value" id="balance">0,00 LEI</div>
+      </div>
+    </section>
+
+    <!-- 2. Formular Adăugare Tranzacție -->
+    <section class="card form-section">
+      <h2>Adaugă Tranzacție</h2>
+      <form id="transaction-form">
+        <div class="form-group">
+          <label for="description">Descriere</label>
+          <input type="text" id="description" placeholder="ex: Chirie, Salariu, Cumpărături" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="amount">Suma (LEI)</label>
+            <input type="number" id="amount" step="0.01" placeholder="0.00" required>
+          </div>
+
+          <div class="form-group">
+            <label for="type">Tip</label>
+            <select id="type">
+              <option value="expense">Cheltuială</option>
+              <option value="income">Venit</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="category">Categorie</label>
+          <select id="category">
+            <option value="Fixe">Cheltuieli Fixe (Chirie/Rate/Utilități)</option>
+            <option value="Variabile">Cheltuieli Variabile (Mâncare/Ieșiri)</option>
+            <option value="Venit">Venit (Salariu/Freelance)</option>
+            <option value="Economii">Economii / Investiții</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-primary">Adaugă Înregistrare</button>
+      </form>
+    </section>
+
+    <!-- 3. Lista Tranzacțiilor -->
+    <section class="card list-section">
+      <h2>Istoric Tranzacții</h2>
+      <ul id="transaction-list" class="transaction-list">
+        <!-- Elementele vor fi adăugate din JavaScript -->
+      </ul>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
