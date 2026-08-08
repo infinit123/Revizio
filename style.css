@@ -517,3 +517,90 @@ input:focus, select:focus {
   border-radius: 5px;
   transition: width 0.3s ease;
 }
+/* ==========================================================================
+   ANIMAȚII ȘI INTERACȚIUNI TACTILE APPLE (v3.0.2)
+   ========================================================================== */
+
+/* Keyframes animație de intrare cu declanșare dinamică (fade + slide vertical) */
+@keyframes iosCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Aplicare animație pe carduri la comutarea pe un tab activ */
+.tab-content.active .ios-card {
+  animation: iosCardFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggering (întârzieri secvențiale) pentru cardurile din Dashboard */
+#sec-dashboard.active .ios-card:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+#sec-dashboard.active .ios-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+#sec-dashboard.active .metrics-grid .ios-card:nth-child(1) {
+  animation-delay: 0.15s;
+}
+
+#sec-dashboard.active .metrics-grid .ios-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+#sec-dashboard.active .ios-card:nth-child(4) {
+  animation-delay: 0.25s;
+}
+
+/* Efecte Haptic / Touch Feedback (Scale-down la apăsare) */
+.ios-btn-primary,
+.ios-btn-secondary,
+.picker-btn,
+.theme-btn,
+.nav-btn,
+.month-nav-btn,
+.btn-clear,
+.btn-delete-item {
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.ios-btn-primary:active,
+.ios-btn-secondary:active,
+.picker-btn:active,
+.theme-btn:active {
+  transform: scale(0.96);
+}
+
+.nav-btn:active,
+.month-nav-btn:active,
+.btn-clear:active {
+  transform: scale(0.92);
+}
+
+/* Respectare setare Accesibilitate (Prefers Reduced Motion) */
+@media (prefers-reduced-motion: reduce) {
+  .tab-content.active .ios-card {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .ios-btn-primary,
+  .ios-btn-secondary,
+  .picker-btn,
+  .theme-btn,
+  .nav-btn,
+  .month-nav-btn,
+  .btn-clear,
+  .btn-delete-item {
+    transition: none !important;
+    transform: none !important;
+  }
+}
